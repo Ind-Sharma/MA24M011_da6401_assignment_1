@@ -1,0 +1,7 @@
+Strict_instructions.md
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+wandb/

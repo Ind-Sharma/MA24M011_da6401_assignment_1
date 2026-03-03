@@ -1,0 +1,153 @@
+"""
+Main Neural Network Model class
+Handles forward and backward propagation loops
+"""
+from src.ann.neural_layer import NNLayer
+import numpy as np
+from .objective_functions import LossLayer
+from .optimizers import SGD, Momentum, RMSprop
+from .neural_layer import NNLayer
+
+
+def _get_optimizer(args):
+    lr = args.learning_rate
+    wd = args.weight_decay
+    opt = args.optimizer
+
+    if opt == 'sgd':
+        return SGD(lr, wd)
+    elif opt == 'momentum':
+        return Momentum(lr, wd)
+    elif opt == 'rmsprop':
+        return RMSprop(lr, wd)
+    else:
+        return SGD(lr, wd)
+
+
+class NeuralNetwork:
+    """
+    Main model class that orchestrates the neural network training and inference.
+    Accepts CLI args and builds network.
+    Forward returns logits (no softmax) - required for MSE.
+    Backward returns arrays of arrays, index 0 = last layer gradient as instructed in class..
+    """
+
+    def __init__(self, args):
+        args.hidden_layers = args.hidden_size
+
+        from ..utils.data_loader import build_network
+        self.layers = build_network(args)
+        self.param_layers = [layer for layer in self.layers if type(layer) == NNLayer]
+
+        self.loss_fn = LossLayer(args.loss)
+        self.optimizer = _get_optimizer(args)
+
+    def forward(self, X):
+        """
+        Forward propagation through all layers.
+        Returns logits (no softmax applied)
+        X is shape (b, D_in) and output is shape (b, D_out).
+        b is batch size, D_in is input dimension, D_out is output dimension.
+        """
+        a = X.T
+        for layer in self.layers:
+            a = layer.forward_pass(a)
+        return a.T
+
+    def backward(self,y,y_hat):
+        """
+        Backward propagation to compute gradients.
+        Returns two numpy arrays: grad_Ws, grad_bs.
+        - `grad_Ws[0]` is gradient for the last (output) layer weights,
+          `grad_bs[0]` is gradient for the last layer biases, and so on.
+        """
+        grad_W_list = []
+        grad_b_list = []
+
+        # Backprop through layers in reverse; collect grads so that index 0 = last layer
+        # Loss expects (classes, batch); forward returns (batch, classes)
+        loss = self.loss_fn.forward_pass(y_hat.T,y.T)
+        grad_from_next = self.loss_fn.backward_pass()
+
+        num_layers = len(self.layers)
+        layer_index = num_layers-1
+        while layer_index >= 0:
+            current_layer = self.layers[layer_index]
+            grad_from_next = current_layer.backward_pass(grad_from_next)
+            if type(current_layer) == NNLayer:
+                grad_W_list.append(current_layer.grad_W)
+                grad_b_list.append(current_layer.grad_b)
+            layer_index = layer_index-1
+
+        # create explicit object arrays to avoid numpy trying to broadcast shapes
+        self.grad_W = np.empty(len(grad_W_list),dtype=object)
+        self.grad_b = np.empty(len(grad_b_list),dtype=object)
+        for i, (gw, gb) in enumerate(zip(grad_W_list, grad_b_list)):
+            self.grad_W[i] = gw
+            self.grad_b[i] = gb
+
+        return self.grad_W, self.grad_b, loss
+
+    def update_weights(self):
+        self.optimizer.update(self.param_layers)
+
+    def train(self,X_train,y_train,epochs=1,batch_size=32):
+        from ..utils.data_loader import one_hot_encode
+
+        Y = one_hot_encode(y_train).T
+        N = X_train.shape[0]
+        for ep in range(epochs):
+            perm = np.random.permutation(N)
+            X_shuf = X_train[perm]
+            Y_shuf = Y[:,perm]
+            total_loss = 0.0
+            count = 0
+            for start in range(0,N,batch_size):
+                end = start+batch_size
+                if end > N:
+                    end = N
+                X_b = X_shuf[start:end]
+                Y_b = Y_shuf[:,start:end]
+                y_hat = self.forward(X_b)
+                _, _, loss = self.backward(Y_b.T,y_hat)
+                total_loss = total_loss+loss
+                count = count+1
+                self.update_weights()
+            avg_loss = total_loss/count
+        return avg_loss
+
+    def evaluate(self,X,y):
+        from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score,confusion_matrix
+
+        y_hat = self.forward(X)
+        y_hat_labels = np.argmax(y_hat,axis=1)
+
+        accuracy = accuracy_score(y,y_hat_labels)
+        precision = precision_score(y, y_hat_labels,average='macro')
+        recall = recall_score(y, y_hat_labels,average='macro')
+        f1_score = f1_score(y, y_hat_labels,average='macro')
+        confusion_matrix = confusion_matrix(y,y_hat_labels)
+
+        return {
+            "accuracy": float(accuracy),
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1": float(f1_score),
+            "confusion_matrix": confusion_matrix,
+        }
+
+    def get_weights(self):
+        d = {}
+        for i, layer in enumerate(self.param_layers):
+            d[f"W{i}"] = layer.W.copy()
+            d[f"b{i}"] = layer.b.copy()
+        return d
+
+    def set_weights(self, weight_dict):
+        for i, layer in enumerate(self.param_layers):
+            w_key = f"W{i}"
+            b_key = f"b{i}"
+            if w_key in weight_dict:
+                layer.W = weight_dict[w_key].copy()
+            if b_key in weight_dict:
+                layer.b = weight_dict[b_key].copy()
