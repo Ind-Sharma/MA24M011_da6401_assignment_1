@@ -13,9 +13,39 @@ import json
 import numpy as np
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.utils.data_loader import load_dataset, one_hot_encode
-from src.ann.neural_network import NeuralNetwork
+
+# Add both project root and src/ to path so imports work regardless of CWD
+_src_dir = os.path.dirname(os.path.abspath(__file__))
+_root_dir = os.path.dirname(_src_dir)
+sys.path.insert(0, _root_dir)
+sys.path.insert(0, _src_dir)
+
+try:
+    from ann.neural_network import NeuralNetwork
+except ImportError:
+    from src.ann.neural_network import NeuralNetwork
+
+
+def _load_data(dataset_name):
+    """Load dataset with sklearn-first strategy to avoid TF import hangs."""
+    if dataset_name == 'mnist':
+        try:
+            from sklearn.datasets import fetch_openml
+            try:
+                data = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
+            except TypeError:
+                data = fetch_openml('mnist_784', version=1, as_frame=False)
+            X = data.data.astype(float) / 255.0
+            y = data.target.astype(int)
+            return X[:60000], y[:60000], X[60000:], y[60000:]
+        except Exception:
+            pass
+    # Fallback: data_loader (keras cache → TF → urllib)
+    try:
+        from utils.data_loader import load_dataset
+    except ImportError:
+        from src.utils.data_loader import load_dataset
+    return load_dataset(dataset_name)
 
 
 def parse_arguments():
@@ -33,14 +63,15 @@ def parse_arguments():
     parser.add_argument('-wd','--weight_decay',type=float,default=0.0)
     parser.add_argument('-w_p','--wandb_project',type=str,default='da6401_assignment1')
     parser.add_argument('-m','--model_save_path',type=str,default='src/best_model.npy')
-    return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
 
 
-def save_best_model(weights,config,model_save_path):
-    np.save(model_save_path,weights)
-    config_path = model_save_path.replace(".npy","_config.json")
-    with open(config_path,"w") as f:
-        json.dump(config,f,indent=2)
+def save_best_model(weights, config, model_save_path):
+    np.save(model_save_path, weights)
+    config_path = model_save_path.replace(".npy", "_config.json")
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
 
 
 def main():
@@ -49,18 +80,19 @@ def main():
 
     import wandb
     wandb_mode = "online" if os.environ.get("WANDB_API_KEY") else "disabled"
-    wandb.init(project=args.wandb_project, config=vars(args), mode=wandb_mode)
+    wandb.init(project=args.wandb_project, config=vars(args), mode=wandb_mode,
+               settings=wandb.Settings(start_method="thread"))
 
-    X_train,y_train,X_test,y_test = load_dataset(args.dataset)
+    X_train, y_train, X_test, y_test = _load_data(args.dataset)
     model = NeuralNetwork(args)
 
     best_f1 = 0.0
     best_weights = None
     best_config = None
     for ep in range(args.epochs):
-        avg_loss = model.train(X_train,y_train,epochs=1,batch_size=args.batch_size)
-        result = model.evaluate(X_test,y_test)
-        print(f"Epoch {ep+1}/{args.epochs},loss: {avg_loss:.4f}, accuracy:{result['accuracy']:.4f},f1:{result['f1']:.4f}")
+        avg_loss = model.train(X_train, y_train, epochs=1, batch_size=args.batch_size)
+        result = model.evaluate(X_test, y_test)
+        print(f"Epoch {ep+1}/{args.epochs}, loss: {avg_loss:.4f}, accuracy: {result['accuracy']:.4f}, f1: {result['f1']:.4f}")
         if result["f1"] > best_f1:
             best_f1 = result["f1"]
             best_weights = model.get_weights()
@@ -81,20 +113,22 @@ def main():
                 "model_save_path": args.model_save_path,
             }
 
-    model.set_weights(best_weights)
-    result = model.evaluate(X_test,y_test)
+    if best_weights is not None:
+        model.set_weights(best_weights)
+    result = model.evaluate(X_test, y_test)
 
-    save_best_model(best_weights,best_config,args.model_save_path)
+    save_best_model(model.get_weights(), best_config or {}, args.model_save_path)
 
-    wandb.log({"test_accuracy": result["accuracy"],"test_precision":result["precision"],
-               "test_recall":result["recall"],"test_f1":result["f1"]})
-    wandb.finish()
+    if wandb_mode != "disabled":
+        wandb.log({"test_accuracy": result["accuracy"], "test_precision": result["precision"],
+                   "test_recall": result["recall"], "test_f1": result["f1"]})
+    wandb.finish(quiet=True)
 
     print("\n--- Final metrics ---")
     print(f"Accuracy: {result['accuracy']:.4f}")
-    print(f"Precision:{result['precision']:.4f}")
-    print(f"Recall:{result['recall']:.4f}")
-    print(f"F1-score:{result['f1']:.4f}")
+    print(f"Precision: {result['precision']:.4f}")
+    print(f"Recall: {result['recall']:.4f}")
+    print(f"F1-score: {result['f1']:.4f}")
     print(f"Best model saved to {args.model_save_path}")
 
 

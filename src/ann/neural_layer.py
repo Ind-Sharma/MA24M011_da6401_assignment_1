@@ -6,18 +6,10 @@ import numpy as np
 from .activations import sigmoid,sigmoid_grad,tanh,tanh_grad,relu,relu_grad,softmax,softmax_grad
 
 def random_weight_init(m,n):
-    W_list = np.empty((m,n))
-    for i in range(m):
-        for j in range(n):
-            W_list[i,j] = np.random.randn()
-    return W_list
+    return np.random.randn(m, n)
 
 def xavier_weight_init(m,n):
-    W_list = np.empty((m,n))
-    for i in range(m):
-        for j in range(n):
-            W_list[i,j] = np.random.randn()*(np.sqrt(1.0/n))
-    return W_list
+    return np.random.randn(m, n) * np.sqrt(1.0 / n)
 
 def zeros_weight_init(m,n):
     return np.zeros((m,n))
@@ -56,12 +48,7 @@ class NNLayer:
         self.grad_W=(1/batch_size)*dZ_times_prev_input
 
         # gradient of loss w.r.t. bias
-        num_neurons = dZ.shape[0]
-        sum_over_batch = np.zeros((num_neurons,1))
-        for i in range(num_neurons):
-            for j in range(batch_size):
-                sum_over_batch[i,0] = sum_over_batch[i,0]+dZ[i,j]
-        self.grad_b = (1/batch_size)*sum_over_batch
+        self.grad_b = (1/batch_size) * np.sum(dZ, axis=1, keepdims=True)
 
         # gradient to pass to previous layer
         grad_to_prev_layer=np.dot(self.W.T,dZ)
