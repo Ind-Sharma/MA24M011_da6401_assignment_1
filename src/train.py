@@ -2,8 +2,11 @@
 Main Training Script
 Entry point for training neural networks with command-line arguments
 """
-from dotenv import load_dotenv
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 import argparse
 import json
@@ -45,7 +48,8 @@ def main():
     args.hidden_layers = args.hidden_size
 
     import wandb
-    wandb.init(project=args.wandb_project,config=vars(args))
+    wandb_mode = "online" if os.environ.get("WANDB_API_KEY") else "disabled"
+    wandb.init(project=args.wandb_project, config=vars(args), mode=wandb_mode)
 
     X_train,y_train,X_test,y_test = load_dataset(args.dataset)
     model = NeuralNetwork(args)

@@ -4,7 +4,10 @@ Handles MNIST and Fashion-MNIST datasets
 """
 import numpy as np
 from keras.datasets import mnist, fashion_mnist
-from src.ann import NNLayer, ActivationLayer
+try:
+    from src.ann import NNLayer, ActivationLayer
+except ImportError:
+    from ann import NNLayer, ActivationLayer
 
 
 def load_dataset(dataset_name):

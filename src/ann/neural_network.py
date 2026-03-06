@@ -2,7 +2,6 @@
 Main Neural Network Model class
 Handles forward and backward propagation loops
 """
-from src.ann.neural_layer import NNLayer
 import numpy as np
 from .objective_functions import LossLayer
 from .optimizers import SGD, Momentum, RMSprop
@@ -35,7 +34,10 @@ class NeuralNetwork:
     def __init__(self, args):
         args.hidden_layers = args.hidden_size
 
-        from ..utils.data_loader import build_network
+        try:
+            from ..utils.data_loader import build_network
+        except ImportError:
+            from utils.data_loader import build_network
         self.layers = build_network(args)
         self.param_layers = [layer for layer in self.layers if type(layer) == NNLayer]
 
@@ -92,7 +94,10 @@ class NeuralNetwork:
         self.optimizer.update(self.param_layers)
 
     def train(self,X_train,y_train,epochs=1,batch_size=32):
-        from ..utils.data_loader import one_hot_encode
+        try:
+            from ..utils.data_loader import one_hot_encode
+        except ImportError:
+            from utils.data_loader import one_hot_encode
 
         Y = one_hot_encode(y_train).T
         N = X_train.shape[0]
@@ -117,23 +122,23 @@ class NeuralNetwork:
         return avg_loss
 
     def evaluate(self,X,y):
-        from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score,confusion_matrix
+        from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score as f1_score_fn,confusion_matrix as confusion_matrix_fn
 
         y_hat = self.forward(X)
         y_hat_labels = np.argmax(y_hat,axis=1)
 
         accuracy = accuracy_score(y,y_hat_labels)
         precision = precision_score(y, y_hat_labels,average='macro',zero_division=0)
-        recall = recall_score(y, y_hat_labels,average='macro')
-        f1_score = f1_score(y, y_hat_labels,average='macro')
-        confusion_matrix = confusion_matrix(y,y_hat_labels)
+        recall = recall_score(y, y_hat_labels,average='macro',zero_division=0)
+        f1 = f1_score_fn(y, y_hat_labels,average='macro',zero_division=0)
+        cm = confusion_matrix_fn(y,y_hat_labels)
 
         return {
             "accuracy": float(accuracy),
             "precision": float(precision),
             "recall": float(recall),
-            "f1": float(f1_score),
-            "confusion_matrix": confusion_matrix
+            "f1": float(f1),
+            "confusion_matrix": cm
         }
 
     def get_weights(self):
