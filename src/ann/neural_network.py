@@ -182,6 +182,8 @@ class NeuralNetwork:
         for i, layer in enumerate(self.param_layers):
             d[f"W{i}"] = layer.W.copy()
             d[f"b{i}"] = layer.b.copy()
+        # Store activation so set_weights can restore the correct activation
+        d['_activation'] = self._activation
         return d
 
     def _assign_W(self, layer, W):
@@ -214,6 +216,9 @@ class NeuralNetwork:
             W_arrays = {}
             b_arrays = {}
             for k, v in weights.items():
+                if k == '_activation':
+                    self._activation = v  # restore activation from saved weights
+                    continue
                 if k.startswith('W'):
                     try:
                         W_arrays[int(k[1:])] = v
@@ -233,8 +238,8 @@ class NeuralNetwork:
 
             if n_weights != n_layers:
                 # Architecture mismatch: rebuild layers to match incoming weights
-                # This ensures get_weights() returns the correct weights afterward
-                activation = getattr(self, '_activation', 'relu')
+                # Use activation stored in weights dict if available
+                activation = weights.get('_activation', getattr(self, '_activation', 'relu'))
                 new_layers = []
                 for i, (W, b) in enumerate(zip(W_sorted, b_sorted)):
                     W = np.array(W, dtype=float)
