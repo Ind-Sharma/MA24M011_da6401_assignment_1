@@ -21,7 +21,9 @@ NeuralNetwork = _get_nn_class()
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Run inference on test set')
-    parser.add_argument('-m','--model_path',type=str,default='src/best_model.npy')
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    _default_model = os.path.join(_script_dir, 'best_model.npy')
+    parser.add_argument('-m','--model_path',type=str,default=_default_model)
     parser.add_argument('-d','--dataset',choices=['mnist','fashion_mnist'],default='mnist')
     parser.add_argument('-e','--epochs',type=int,default=20)
     parser.add_argument('-b','--batch_size',type=int,default=128)
@@ -39,11 +41,17 @@ def parse_arguments():
 
 
 def load_model(model_path):
-    """
-    Load trained model from disk.
-    """
-    data = np.load(model_path, allow_pickle=True).item()
-    return data
+    """Load trained model from disk."""
+    # Try given path first, then fallback to script-relative path
+    candidates = [model_path]
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates.append(os.path.join(_script_dir, 'best_model.npy'))
+    candidates.append(os.path.join(_script_dir, '..', 'models', 'model.npy'))
+    for path in candidates:
+        if os.path.exists(path):
+            return np.load(path, allow_pickle=True).item()
+    # Last resort: try original path (will raise if not found)
+    return np.load(model_path, allow_pickle=True).item()
 
 
 def evaluate_model(model,X_test,y_test):
