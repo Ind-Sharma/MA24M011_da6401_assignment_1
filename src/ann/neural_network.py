@@ -46,7 +46,8 @@ class NeuralNetwork:
             except ImportError:
                 from utils.data_loader import build_network
         self.layers = build_network(args)
-        self.param_layers = [layer for layer in self.layers if type(layer) == NNLayer]
+        # Use isinstance + class name check to handle multiple import paths
+        self.param_layers = [l for l in self.layers if hasattr(l, 'grad_W') and hasattr(l, 'W')]
 
         self.loss_fn = LossLayer(getattr(args, 'loss', 'cross_entropy'))
         self.optimizer = _get_optimizer(args)
@@ -90,7 +91,7 @@ class NeuralNetwork:
         while layer_index >= 0:
             current_layer = self.layers[layer_index]
             grad_from_next = current_layer.backward_pass(grad_from_next)
-            if type(current_layer) == NNLayer:
+            if hasattr(current_layer, 'grad_W') and hasattr(current_layer, 'W'):
                 grad_W_list.append(current_layer.grad_W)
                 grad_b_list.append(current_layer.grad_b)
             layer_index = layer_index-1
