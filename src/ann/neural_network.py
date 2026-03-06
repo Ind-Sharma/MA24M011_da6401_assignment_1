@@ -37,7 +37,10 @@ class NeuralNetwork:
         try:
             from ..utils.data_loader import build_network
         except ImportError:
-            from utils.data_loader import build_network
+            try:
+                from src.utils.data_loader import build_network
+            except ImportError:
+                from utils.data_loader import build_network
         self.layers = build_network(args)
         self.param_layers = [layer for layer in self.layers if type(layer) == NNLayer]
 
@@ -97,7 +100,10 @@ class NeuralNetwork:
         try:
             from ..utils.data_loader import one_hot_encode
         except ImportError:
-            from utils.data_loader import one_hot_encode
+            try:
+                from src.utils.data_loader import one_hot_encode
+            except ImportError:
+                from utils.data_loader import one_hot_encode
 
         Y = one_hot_encode(y_train).T
         N = X_train.shape[0]
