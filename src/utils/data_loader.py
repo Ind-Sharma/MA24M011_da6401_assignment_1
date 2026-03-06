@@ -102,12 +102,14 @@ def load_dataset(dataset_name):
     if not loaded and dataset_name == 'mnist':
         try:
             from sklearn.datasets import fetch_openml
-            mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
+            try:
+                mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
+            except TypeError:
+                mnist = fetch_openml('mnist_784', version=1, as_frame=False)
             X = mnist.data.astype(np.float32)
             y = mnist.target.astype(int)
             X_train, X_test = X[:60000], X[60000:]
             y_train, y_test = y[:60000], y[60000:]
-            # sklearn returns already flat (N,784) normalized 0-255, undo /255 later
             X_train = X_train.reshape(-1,28,28)
             X_test  = X_test.reshape(-1,28,28)
             loaded = True
