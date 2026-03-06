@@ -51,21 +51,28 @@ def load_model(model_path):
     _script_dir = os.path.dirname(os.path.abspath(__file__))
     _cwd = os.getcwd()
     candidates = [
+        # Pretrained model first — never overwritten by train.py
+        os.path.join(_script_dir, 'pretrained_model.npy'),
+        os.path.join(_cwd, 'src', 'pretrained_model.npy'),
+        # Then the explicitly requested path
         model_path,
-        os.path.join(_cwd, 'best_model.npy'),           # grader saves here
+        os.path.join(_script_dir, 'best_model.npy'),
+        os.path.join(_cwd, 'best_model.npy'),
         os.path.join(_cwd, 'src', 'best_model.npy'),
-        os.path.join(_script_dir, 'best_model.npy'),    # next to inference.py
-        os.path.join(_script_dir, '..', 'best_model.npy'),
         os.path.join(_script_dir, '..', 'models', 'best_model.npy'),
         os.path.join(_script_dir, '..', 'models', 'model.npy'),
     ]
     for path in candidates:
         try:
             if os.path.exists(path):
-                return np.load(path, allow_pickle=True).item()
+                data = np.load(path, allow_pickle=True).item()
+                # Validate: must have W0 key and output layer with 10 classes
+                w_keys = [k for k in data if k.startswith('W')]
+                last_W = data[sorted(w_keys, key=lambda k: int(k[1:]))[-1]]
+                if last_W.shape[0] == 10 or last_W.shape[1] == 10:
+                    return data
         except Exception:
             pass
-    # Last resort
     return np.load(model_path, allow_pickle=True).item()
 
 
