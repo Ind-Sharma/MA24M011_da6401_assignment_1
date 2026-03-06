@@ -199,23 +199,52 @@ class NeuralNetwork:
     def set_weights(self, weights):
         if isinstance(weights, list):
             if len(weights) > 0 and isinstance(weights[0], tuple):
-                for i, (W, b) in enumerate(weights):
-                    if i < len(self.param_layers):
-                        self._assign_W(self.param_layers[i], W)
-                        self._assign_b(self.param_layers[i], b)
+                # list of (W, b) tuples — match by position
+                w_list = [(W, b) for W, b in weights]
             else:
-                for i, layer in enumerate(self.param_layers):
-                    if 2*i < len(weights):
-                        self._assign_W(layer, weights[2*i])
-                    if 2*i+1 < len(weights):
-                        self._assign_b(layer, weights[2*i+1])
+                # flat list [W0, b0, W1, b1, ...]
+                w_list = [(weights[2*i], weights[2*i+1])
+                          for i in range(len(weights)//2)]
+            for i, (W, b) in enumerate(w_list):
+                if i < len(self.param_layers):
+                    self._assign_W(self.param_layers[i], W)
+                    self._assign_b(self.param_layers[i], b)
         else:
-            for i, layer in enumerate(self.param_layers):
-                for w_key in [f"W{i}", f"W{i+1}"]:
-                    if w_key in weights:
-                        self._assign_W(layer, weights[w_key])
-                        break
-                for b_key in [f"b{i}", f"b{i+1}"]:
-                    if b_key in weights:
-                        self._assign_b(layer, weights[b_key])
+            # dict: extract all W/b arrays sorted by key index
+            W_arrays = {}
+            b_arrays = {}
+            for k, v in weights.items():
+                if k.startswith('W'):
+                    try:
+                        W_arrays[int(k[1:])] = v
+                    except ValueError:
+                        pass
+                elif k.startswith('b'):
+                    try:
+                        b_arrays[int(k[1:])] = v
+                    except ValueError:
+                        pass
+
+            # Sort by key index
+            W_sorted = [W_arrays[k] for k in sorted(W_arrays)]
+            b_sorted = [b_arrays[k] for k in sorted(b_arrays)]
+
+            # Match each param layer to the weight with compatible shape
+            # Strategy: greedily assign weight matrices that match layer shape
+            used_w = set()
+            used_b = set()
+            for layer in self.param_layers:
+                n_out, n_in = layer.W.shape
+                # Find matching W by shape (exact or transposed)
+                for j, W in enumerate(W_sorted):
+                    if j in used_w:
+                        continue
+                    W = np.array(W, dtype=float)
+                    if W.shape == (n_out, n_in) or W.shape == (n_in, n_out):
+                        self._assign_W(layer, W)
+                        used_w.add(j)
+                        # Use the same-indexed bias
+                        if j < len(b_sorted) and j not in used_b:
+                            self._assign_b(layer, b_sorted[j])
+                            used_b.add(j)
                         break

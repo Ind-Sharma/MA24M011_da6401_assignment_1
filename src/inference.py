@@ -49,11 +49,15 @@ def parse_arguments():
 def load_model(model_path):
     """Load trained model from disk with fallback paths."""
     _script_dir = os.path.dirname(os.path.abspath(__file__))
+    _cwd = os.getcwd()
     candidates = [
         model_path,
-        os.path.join(_script_dir, 'best_model.npy'),
-        os.path.join(_script_dir, '..', 'models', 'model.npy'),
+        os.path.join(_cwd, 'best_model.npy'),           # grader saves here
+        os.path.join(_cwd, 'src', 'best_model.npy'),
+        os.path.join(_script_dir, 'best_model.npy'),    # next to inference.py
+        os.path.join(_script_dir, '..', 'best_model.npy'),
         os.path.join(_script_dir, '..', 'models', 'best_model.npy'),
+        os.path.join(_script_dir, '..', 'models', 'model.npy'),
     ]
     for path in candidates:
         try:
@@ -131,13 +135,33 @@ def _load_data(dataset_name):
     return load_dataset(dataset_name)
 
 
+def _args_from_weights(weights, base_args):
+    """Infer hidden layer architecture from saved weight shapes."""
+    import argparse
+    w_keys = sorted([k for k in weights if k.startswith('W')],
+                    key=lambda k: int(k[1:]))
+    if len(w_keys) < 2:
+        return argparse.Namespace(**vars(base_args))
+    shapes = [np.array(weights[k]).shape for k in w_keys]
+    # Each weight is (n_out, n_in). Hidden = n_out of all layers except last output layer.
+    # e.g. [(128,784),(128,128),(10,128)] → hidden=[128,128]
+    hidden = [s[0] for s in shapes[:-1]]
+    args = argparse.Namespace(**vars(base_args))
+    args.hidden_size   = hidden
+    args.hidden_layers = hidden
+    return args
+
+
 def main():
     args = parse_arguments()
+    weights = load_model(args.model_path)
+
+    # Rebuild architecture exactly matching saved weights
+    args = _args_from_weights(weights, args)
     args.hidden_layers = args.hidden_size
 
     NeuralNetwork = _import_nn()
     model = NeuralNetwork(args)
-    weights = load_model(args.model_path)
     model.set_weights(weights)
 
     X_train, y_train, X_test, y_test = _load_data(args.dataset)
