@@ -105,11 +105,13 @@ def build_network(args):
     """Build list of layers from args (train) or config (inference)."""
     inp_dim = 784    
     out_dim = 10
-    h = getattr(args, 'hidden_layers', None) or getattr(args, 'hidden_size', [128])
-    if isinstance(h, int):
-        h = [h]
+    h = getattr(args, 'hidden_layers', None)
+    if h is None:
+        h = getattr(args, 'hidden_size', [128])
     if h is None:
         h = [128]
+    if isinstance(h, int):
+        h = [h]
     weight_init = getattr(args, 'weight_init', 'xavier')
     activation = getattr(args, 'activation', 'relu')
 

@@ -69,13 +69,20 @@ class NeuralNetwork:
         Returns two numpy arrays: grad_Ws, grad_bs.
         - `grad_Ws[0]` is gradient for the last (output) layer weights,
           `grad_bs[0]` is gradient for the last layer biases, and so on.
+        y can be one-hot (batch, classes) or integer labels (batch,).
         """
         grad_W_list = []
         grad_b_list = []
 
-        # Backprop through layers in reverse; collect grads so that index 0 = last layer
+        # Convert integer labels to one-hot if needed
+        if y.ndim == 1 or (y.ndim == 2 and y.shape[1] == 1):
+            n_classes = y_hat.shape[1] if y_hat.ndim == 2 else 10
+            y_oh = np.zeros((len(y), n_classes))
+            y_oh[np.arange(len(y)), y.astype(int).flatten()] = 1.0
+            y = y_oh
+
         # Loss expects (classes, batch); forward returns (batch, classes)
-        loss = self.loss_fn.forward_pass(y_hat.T,y.T)
+        loss = self.loss_fn.forward_pass(y_hat.T, y.T)
         grad_from_next = self.loss_fn.backward_pass()
 
         num_layers = len(self.layers)
@@ -95,7 +102,7 @@ class NeuralNetwork:
             self.grad_W[i] = gw
             self.grad_b[i] = gb
 
-        return self.grad_W, self.grad_b, loss
+        return self.grad_W, self.grad_b
 
     def update_weights(self):
         self.optimizer.update(self.param_layers)
@@ -124,7 +131,8 @@ class NeuralNetwork:
                 X_b = X_shuf[start:end]
                 Y_b = Y_shuf[:,start:end]
                 y_hat = self.forward(X_b)
-                _, _, loss = self.backward(Y_b.T,y_hat)
+                loss = self.loss_fn.forward_pass(y_hat.T, Y_b)
+                self.backward(Y_b.T, y_hat)
                 total_loss = total_loss+loss
                 count = count+1
                 self.update_weights()
