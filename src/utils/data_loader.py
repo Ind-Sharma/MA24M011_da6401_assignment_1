@@ -61,18 +61,7 @@ def _load_via_urllib(dataset_name):
 
 def load_dataset(dataset_name):
     loaded = False
-    # Try tensorflow.keras first (most common in grader envs)
-    if not loaded:
-        try:
-            import tensorflow as tf
-            if dataset_name == "mnist":
-                (X_train,y_train),(X_test,y_test) = tf.keras.datasets.mnist.load_data()
-            else:
-                (X_train,y_train),(X_test,y_test) = tf.keras.datasets.fashion_mnist.load_data()
-            loaded = True
-        except Exception:
-            pass
-    # Fallback: try keras standalone (older versions that work without TF)
+    # Try keras standalone first (lighter import, works with keras 2.x)
     if not loaded:
         try:
             import importlib
@@ -84,7 +73,18 @@ def load_dataset(dataset_name):
             loaded = True
         except Exception:
             pass
-    # Final fallback: raw urllib download
+    # Fallback: tensorflow.keras
+    if not loaded:
+        try:
+            import tensorflow as tf
+            if dataset_name == "mnist":
+                (X_train,y_train),(X_test,y_test) = tf.keras.datasets.mnist.load_data()
+            else:
+                (X_train,y_train),(X_test,y_test) = tf.keras.datasets.fashion_mnist.load_data()
+            loaded = True
+        except Exception:
+            pass
+    # Final fallback: raw urllib download (no ML framework needed)
     if not loaded:
         (X_train,y_train),(X_test,y_test) = _load_via_urllib(dataset_name)
 
