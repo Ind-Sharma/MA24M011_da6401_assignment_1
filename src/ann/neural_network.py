@@ -178,29 +178,36 @@ class NeuralNetwork:
             d[f"b{i}"] = layer.b.copy()
         return d
 
+    def _assign_W(self, layer, W):
+        """Set layer.W, transposing if needed so shape is (n_out, n_in)."""
+        W = W.copy()
+        # layer.W shape is (n_out, n_in); if incoming W has shape (n_in, n_out) transpose it
+        if W.shape != layer.W.shape and W.T.shape == layer.W.shape:
+            W = W.T
+        layer.W = W
+
     def set_weights(self, weights):
         if isinstance(weights, list):
-            # List of (W, b) tuples or flat list of arrays
             if len(weights) > 0 and isinstance(weights[0], tuple):
                 for i, (W, b) in enumerate(weights):
                     if i < len(self.param_layers):
-                        self.param_layers[i].W = W.copy()
-                        self.param_layers[i].b = b.copy()
+                        self._assign_W(self.param_layers[i], W)
+                        self.param_layers[i].b = b.reshape(-1,1).copy() if b.ndim==1 else b.copy()
             else:
-                # flat list: [W0, b0, W1, b1, ...]
                 for i, layer in enumerate(self.param_layers):
                     if 2*i < len(weights):
-                        layer.W = weights[2*i].copy()
+                        self._assign_W(layer, weights[2*i])
                     if 2*i+1 < len(weights):
-                        layer.b = weights[2*i+1].copy()
+                        b = weights[2*i+1]
+                        layer.b = b.reshape(-1,1).copy() if b.ndim==1 else b.copy()
         else:
-            # Dict format - support both 0-indexed (W0) and 1-indexed (W1)
             for i, layer in enumerate(self.param_layers):
                 for w_key in [f"W{i}", f"W{i+1}"]:
                     if w_key in weights:
-                        layer.W = weights[w_key].copy()
+                        self._assign_W(layer, weights[w_key])
                         break
                 for b_key in [f"b{i}", f"b{i+1}"]:
                     if b_key in weights:
-                        layer.b = weights[b_key].copy()
+                        b = weights[b_key]
+                        layer.b = b.reshape(-1,1).copy() if b.ndim==1 else b.copy()
                         break
