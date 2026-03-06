@@ -32,9 +32,22 @@ class NeuralNetwork:
     """
 
     def __init__(self, args):
+        # If args has model_path but no loss/hidden_layers, load config from disk
+        if not hasattr(args, 'loss') or not hasattr(args, 'hidden_layers'):
+            model_path = getattr(args, 'model_path', None) or getattr(args, 'model_save_path', None)
+            if model_path:
+                import json, os
+                config_path = model_path.replace('.npy', '_config.json')
+                if os.path.exists(config_path):
+                    with open(config_path, 'r') as f:
+                        config = json.load(f)
+                    for k, v in config.items():
+                        if not hasattr(args, k):
+                            setattr(args, k, v)
+
         # Support both 'hidden_size' (train.py) and 'hidden_layers' (inference.py / grader)
         if not hasattr(args, 'hidden_layers'):
-            args.hidden_layers = args.hidden_size
+            args.hidden_layers = getattr(args, 'hidden_size', [128])
         if not hasattr(args, 'hidden_size'):
             args.hidden_size = args.hidden_layers
 
@@ -95,12 +108,8 @@ class NeuralNetwork:
                 grad_b_list.append(current_layer.grad_b)
             layer_index = layer_index-1
 
-        # create explicit object arrays to avoid numpy trying to broadcast shapes
-        self.grad_W = np.empty(len(grad_W_list),dtype=object)
-        self.grad_b = np.empty(len(grad_b_list),dtype=object)
-        for i, (gw, gb) in enumerate(zip(grad_W_list, grad_b_list)):
-            self.grad_W[i] = gw
-            self.grad_b[i] = gb
+        self.grad_W = grad_W_list
+        self.grad_b = grad_b_list
 
         return self.grad_W, self.grad_b
 
@@ -166,11 +175,29 @@ class NeuralNetwork:
             d[f"b{i}"] = layer.b.copy()
         return d
 
-    def set_weights(self, weight_dict):
-        for i, layer in enumerate(self.param_layers):
-            w_key = f"W{i}"
-            b_key = f"b{i}"
-            if w_key in weight_dict:
-                layer.W = weight_dict[w_key].copy()
-            if b_key in weight_dict:
-                layer.b = weight_dict[b_key].copy()
+    def set_weights(self, weights):
+        if isinstance(weights, list):
+            # List of (W, b) tuples or flat list of arrays
+            if len(weights) > 0 and isinstance(weights[0], tuple):
+                for i, (W, b) in enumerate(weights):
+                    if i < len(self.param_layers):
+                        self.param_layers[i].W = W.copy()
+                        self.param_layers[i].b = b.copy()
+            else:
+                # flat list: [W0, b0, W1, b1, ...]
+                for i, layer in enumerate(self.param_layers):
+                    if 2*i < len(weights):
+                        layer.W = weights[2*i].copy()
+                    if 2*i+1 < len(weights):
+                        layer.b = weights[2*i+1].copy()
+        else:
+            # Dict format - support both 0-indexed (W0) and 1-indexed (W1)
+            for i, layer in enumerate(self.param_layers):
+                for w_key in [f"W{i}", f"W{i+1}"]:
+                    if w_key in weights:
+                        layer.W = weights[w_key].copy()
+                        break
+                for b_key in [f"b{i}", f"b{i+1}"]:
+                    if b_key in weights:
+                        layer.b = weights[b_key].copy()
+                        break
