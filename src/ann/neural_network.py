@@ -5,7 +5,31 @@ Handles forward and backward propagation loops
 import numpy as np
 from .objective_functions import LossLayer
 from .optimizers import SGD, Momentum, RMSprop
-from .neural_layer import NNLayer
+from .neural_layer import NNLayer, ActivationLayer
+
+
+def _build_network(args):
+    """Build list of layers from args."""
+    inp_dim = 784
+    out_dim = 10
+    h = getattr(args, 'hidden_layers', None)
+    if h is None:
+        h = getattr(args, 'hidden_size', [128])
+    if h is None:
+        h = [128]
+    if isinstance(h, int):
+        h = [h]
+    weight_init = getattr(args, 'weight_init', 'xavier')
+    activation  = getattr(args, 'activation', 'relu')
+
+    layers = []
+    prev_size = inp_dim
+    for curr_size in h:
+        layers.append(NNLayer(curr_size, prev_size, init=weight_init))
+        layers.append(ActivationLayer(activation))
+        prev_size = curr_size
+    layers.append(NNLayer(out_dim, prev_size, init=weight_init))
+    return layers
 
 
 def _get_optimizer(args):
@@ -38,14 +62,7 @@ class NeuralNetwork:
         if not hasattr(args, 'hidden_size'):
             args.hidden_size = args.hidden_layers
 
-        try:
-            from ..utils.data_loader import build_network
-        except ImportError:
-            try:
-                from src.utils.data_loader import build_network
-            except ImportError:
-                from utils.data_loader import build_network
-        self.layers = build_network(args)
+        self.layers = _build_network(args)
         # Use isinstance + class name check to handle multiple import paths
         self.param_layers = [l for l in self.layers if hasattr(l, 'grad_W') and hasattr(l, 'W')]
 
@@ -105,13 +122,11 @@ class NeuralNetwork:
         self.optimizer.update(self.param_layers)
 
     def train(self,X_train,y_train,epochs=1,batch_size=32):
-        try:
-            from ..utils.data_loader import one_hot_encode
-        except ImportError:
-            try:
-                from src.utils.data_loader import one_hot_encode
-            except ImportError:
-                from utils.data_loader import one_hot_encode
+        def one_hot_encode(y, num_classes=10):
+            m = len(y)
+            Y = np.zeros((m, num_classes))
+            Y[np.arange(m), y.astype(int)] = 1
+            return Y
 
         Y = one_hot_encode(y_train).T
         N = X_train.shape[0]

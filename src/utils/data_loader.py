@@ -3,10 +3,6 @@ Data Loading and Preprocessing
 Handles MNIST and Fashion-MNIST datasets
 """
 import numpy as np
-try:
-    from src.ann import NNLayer, ActivationLayer
-except ImportError:
-    from ann import NNLayer, ActivationLayer
 
 
 def _load_via_urllib(dataset_name):
@@ -101,26 +97,3 @@ def one_hot_encode(y,num_classes=10):
     return Y
 
 
-def build_network(args):
-    """Build list of layers from args (train) or config (inference)."""
-    inp_dim = 784    
-    out_dim = 10
-    h = getattr(args, 'hidden_layers', None)
-    if h is None:
-        h = getattr(args, 'hidden_size', [128])
-    if h is None:
-        h = [128]
-    if isinstance(h, int):
-        h = [h]
-    weight_init = getattr(args, 'weight_init', 'xavier')
-    activation = getattr(args, 'activation', 'relu')
-
-    layers = []
-    prev_size = inp_dim
-    for i in range(len(h)):
-        curr_size = h[i]
-        layers.append(NNLayer(curr_size,prev_size,init=weight_init))
-        layers.append(ActivationLayer(activation))
-        prev_size = curr_size
-    layers.append(NNLayer(out_dim,prev_size,init=weight_init))
-    return layers
