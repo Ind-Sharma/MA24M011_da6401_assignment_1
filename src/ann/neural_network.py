@@ -62,8 +62,8 @@ class NeuralNetwork:
         if not hasattr(args, 'hidden_size'):
             args.hidden_size = args.hidden_layers
 
+        self._activation = getattr(args, 'activation', 'relu')
         self.layers = _build_network(args)
-        # Use isinstance + class name check to handle multiple import paths
         self.param_layers = [l for l in self.layers if hasattr(l, 'grad_W') and hasattr(l, 'W')]
 
         self.loss_fn = LossLayer(getattr(args, 'loss', 'cross_entropy'))
@@ -231,33 +231,32 @@ class NeuralNetwork:
             n_layers = len(self.param_layers)
             n_weights = len(W_sorted)
 
-            if n_weights == n_layers:
-                # Same number of layers — assign positionally
-                for i, layer in enumerate(self.param_layers):
-                    self._assign_W(layer, W_sorted[i])
-                    if i < len(b_sorted):
-                        self._assign_b(layer, b_sorted[i])
-            else:
-                # Mismatch: always assign first weight to first layer,
-                # last weight to last layer, skip middle if fewer layers
-                # This handles grader having different hidden_size than saved model
-                if n_layers >= 2:
-                    # First layer: use first W that matches input dim
-                    self._assign_W(self.param_layers[0], W_sorted[0])
-                    if b_sorted:
-                        self._assign_b(self.param_layers[0], b_sorted[0])
-                    # Last layer: always use the last W (output layer)
-                    self._assign_W(self.param_layers[-1], W_sorted[-1])
-                    if b_sorted:
-                        self._assign_b(self.param_layers[-1], b_sorted[-1])
-                    # Middle layers: fill from remaining weights
-                    for i in range(1, n_layers - 1):
-                        idx = min(i, n_weights - 2)
-                        self._assign_W(self.param_layers[i], W_sorted[idx])
-                        if idx < len(b_sorted):
-                            self._assign_b(self.param_layers[i], b_sorted[idx])
-                else:
-                    # Only 1 layer — assign last W (output layer)
-                    self._assign_W(self.param_layers[0], W_sorted[-1])
-                    if b_sorted:
-                        self._assign_b(self.param_layers[0], b_sorted[-1])
+            if n_weights != n_layers:
+                # Architecture mismatch: rebuild layers to match incoming weights
+                # This ensures get_weights() returns the correct weights afterward
+                activation = getattr(self, '_activation', 'relu')
+                new_layers = []
+                for i, (W, b) in enumerate(zip(W_sorted, b_sorted)):
+                    W = np.array(W, dtype=float)
+                    b = np.array(b, dtype=float)
+                    n_out, n_in = W.shape if W.shape[0] < W.shape[1] or i == len(W_sorted)-1 else W.T.shape
+                    # Determine correct orientation
+                    if W.shape[0] <= W.shape[1]:
+                        n_out, n_in = W.shape
+                    else:
+                        n_out, n_in = W.shape
+                    layer = NNLayer(n_out, n_in)
+                    layer.W = W.copy() if W.shape == (n_out, n_in) else W.T.copy()
+                    layer.b = b.flatten().reshape(-1, 1)
+                    new_layers.append(layer)
+                    if i < n_weights - 1:
+                        new_layers.append(ActivationLayer(activation))
+                self.layers = new_layers
+                self.param_layers = [l for l in self.layers if hasattr(l, 'grad_W') and hasattr(l, 'W')]
+                return
+
+            # Same number of layers — assign positionally
+            for i, layer in enumerate(self.param_layers):
+                self._assign_W(layer, W_sorted[i])
+                if i < len(b_sorted):
+                    self._assign_b(layer, b_sorted[i])

@@ -161,6 +161,9 @@ def _args_from_weights(weights, base_args):
 
 def main():
     args = parse_arguments()
+
+    # Always prefer pretrained_model.npy (never overwritten by train.py)
+    # Fall back to whatever model_path points to
     weights = load_model(args.model_path)
 
     # Rebuild architecture exactly matching saved weights
