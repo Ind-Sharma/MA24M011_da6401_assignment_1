@@ -20,15 +20,10 @@ def mse_gradient(y_hat,y):
 
 def cross_entropy_forward(y_hat,y):
     n = y.shape[1]
-    # softmax
-    exp_pred = np.exp(y_hat)
-    probabilities = np.zeros_like(exp_pred)
-    for j in range(exp_pred.shape[1]):
-        col_sum = 0
-        for i in range(exp_pred.shape[0]):
-            col_sum += exp_pred[i,j]
-        for i in range(exp_pred.shape[0]):
-            probabilities[i, j] =exp_pred[i, j]/col_sum
+    # numerically stable softmax: subtract max per column
+    shifted = y_hat - np.max(y_hat, axis=0, keepdims=True)
+    exp_pred = np.exp(shifted)
+    probabilities = exp_pred / (np.sum(exp_pred, axis=0, keepdims=True) + 1e-9)
     # cross entropy loss
     loss = -(1/n)*np.sum(y*np.log(probabilities+1e-9))  # 1e-9 to avoid log(0)
     return loss, probabilities
@@ -50,13 +45,6 @@ class LossLayer:
     def forward_pass(self,y_hat,y):
         self.y_true = y
         self.y_hat = y_hat
-
-        if self.loss_type == "mse":
-            return mse_forward(y_hat,y)
-
-        if self.loss_type == "cross_entropy":
-            loss, self.probabilities = cross_entropy_forward(y_hat,y)
-            return loss
 
         if self.loss_type == "mse":
             return mse_forward(y_hat,y)

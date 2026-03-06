@@ -9,9 +9,9 @@ from .neural_layer import NNLayer
 
 
 def _get_optimizer(args):
-    lr = args.learning_rate
-    wd = getattr(args,'weight_decay',0.0)
-    opt = args.optimizer
+    lr = getattr(args, 'learning_rate', 0.01)
+    wd = getattr(args, 'weight_decay', 0.0)
+    opt = getattr(args, 'optimizer', 'sgd')
 
     if opt == 'sgd':
         return SGD(lr, wd)
@@ -32,7 +32,11 @@ class NeuralNetwork:
     """
 
     def __init__(self, args):
-        args.hidden_layers = args.hidden_size
+        # Support both 'hidden_size' (train.py) and 'hidden_layers' (inference.py / grader)
+        if not hasattr(args, 'hidden_layers'):
+            args.hidden_layers = args.hidden_size
+        if not hasattr(args, 'hidden_size'):
+            args.hidden_size = args.hidden_layers
 
         try:
             from ..utils.data_loader import build_network
@@ -44,7 +48,7 @@ class NeuralNetwork:
         self.layers = build_network(args)
         self.param_layers = [layer for layer in self.layers if type(layer) == NNLayer]
 
-        self.loss_fn = LossLayer(args.loss)
+        self.loss_fn = LossLayer(getattr(args, 'loss', 'cross_entropy'))
         self.optimizer = _get_optimizer(args)
 
     def forward(self, X):
