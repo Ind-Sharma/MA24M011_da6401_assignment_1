@@ -8,8 +8,15 @@ import numpy as np
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.utils.data_loader import load_dataset,one_hot_encode
-from src.ann.neural_network import NeuralNetwork
+
+def _get_nn_class():
+    try:
+        from src.ann.neural_network import NeuralNetwork
+    except ImportError:
+        from ann.neural_network import NeuralNetwork
+    return NeuralNetwork
+
+NeuralNetwork = _get_nn_class()
 
 
 def parse_arguments():
@@ -39,16 +46,16 @@ def load_model(model_path):
 
 
 def evaluate_model(model,X_test,y_test):
-    """
-    Evaluate model on test data.
-
-    TODO: Return Dictionary - logits, loss, accuracy, f1, precision, recall
-    """
     from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score
 
     y_hat = model.forward(X_test)
     y_hat_labels = np.argmax(y_hat,axis=1)
-    loss = model.loss_fn.forward_pass(y_hat.T,one_hot_encode(y_test).T)
+
+    # inline one_hot_encode to avoid any import dependency
+    n_classes = y_hat.shape[1]
+    Y_oh = np.zeros((len(y_test), n_classes))
+    Y_oh[np.arange(len(y_test)), y_test.astype(int)] = 1
+    loss = model.loss_fn.forward_pass(y_hat.T, Y_oh.T)
 
     accuracy = accuracy_score(y_test,y_hat_labels)
     precision = precision_score(y_test,y_hat_labels,average='macro',zero_division=0)
@@ -73,6 +80,10 @@ def main():
     weights = load_model(args.model_path)
     model.set_weights(weights)
 
+    try:
+        from src.utils.data_loader import load_dataset
+    except ImportError:
+        from utils.data_loader import load_dataset
     X_train,y_train,X_test,y_test = load_dataset(args.dataset)
     result = evaluate_model(model,X_test,y_test)
 
