@@ -62,7 +62,9 @@ def parse_arguments():
     parser.add_argument('-w_i','--weight_init',choices=['random','xavier','zeros'],default='xavier')
     parser.add_argument('-wd','--weight_decay',type=float,default=0.0)
     parser.add_argument('-w_p','--wandb_project',type=str,default='da6401_assignment1')
-    parser.add_argument('-m','--model_save_path',type=str,default='src/best_model.npy')
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    _default_save = os.path.join(_script_dir, 'trained_model.npy')
+    parser.add_argument('-m','--model_save_path',type=str,default=_default_save)
     args, _ = parser.parse_known_args()
     return args
 

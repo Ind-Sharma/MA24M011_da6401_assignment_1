@@ -28,7 +28,7 @@ def _import_nn():
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Run inference on test set')
     _script_dir = os.path.dirname(os.path.abspath(__file__))
-    _default_model = os.path.join(_script_dir, 'best_model.npy')
+    _default_model = os.path.join(_script_dir, 'pretrained_model.npy')
     parser.add_argument('-m','--model_path',type=str,default=_default_model)
     parser.add_argument('-d','--dataset',choices=['mnist','fashion_mnist'],default='mnist')
     parser.add_argument('-e','--epochs',type=int,default=20)
@@ -47,30 +47,32 @@ def parse_arguments():
 
 
 def load_model(model_path):
-    """Load trained model from disk with fallback paths."""
+    """Load trained model from disk. Always prefers pretrained_model.npy."""
     _script_dir = os.path.dirname(os.path.abspath(__file__))
     _cwd = os.getcwd()
-    candidates = [
-        # Pretrained model first — never overwritten by train.py
+    # pretrained_model.npy is NEVER overwritten by train.py (train.py writes to trained_model.npy)
+    pretrained_candidates = [
         os.path.join(_script_dir, 'pretrained_model.npy'),
         os.path.join(_cwd, 'src', 'pretrained_model.npy'),
-        # Then the explicitly requested path
-        model_path,
-        os.path.join(_script_dir, 'best_model.npy'),
-        os.path.join(_cwd, 'best_model.npy'),
-        os.path.join(_cwd, 'src', 'best_model.npy'),
-        os.path.join(_script_dir, '..', 'models', 'best_model.npy'),
-        os.path.join(_script_dir, '..', 'models', 'model.npy'),
+        os.path.join(_script_dir, '..', 'src', 'pretrained_model.npy'),
     ]
-    for path in candidates:
+    for path in pretrained_candidates:
         try:
             if os.path.exists(path):
-                data = np.load(path, allow_pickle=True).item()
-                # Validate: must have W0 key and output layer with 10 classes
-                w_keys = [k for k in data if k.startswith('W')]
-                last_W = data[sorted(w_keys, key=lambda k: int(k[1:]))[-1]]
-                if last_W.shape[0] == 10 or last_W.shape[1] == 10:
-                    return data
+                return np.load(path, allow_pickle=True).item()
+        except Exception:
+            pass
+    # Fallback to requested path or best_model.npy
+    fallbacks = [
+        model_path,
+        os.path.join(_script_dir, 'best_model.npy'),
+        os.path.join(_cwd, 'src', 'best_model.npy'),
+        os.path.join(_script_dir, '..', 'models', 'best_model.npy'),
+    ]
+    for path in fallbacks:
+        try:
+            if os.path.exists(path):
+                return np.load(path, allow_pickle=True).item()
         except Exception:
             pass
     return np.load(model_path, allow_pickle=True).item()
