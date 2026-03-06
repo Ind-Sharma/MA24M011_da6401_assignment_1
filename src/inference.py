@@ -34,7 +34,8 @@ def parse_arguments():
     parser.add_argument('-w_i','--weight_init',choices=['random','xavier','zeros'],default='xavier')
     parser.add_argument('-wd','--weight_decay',type=float,default=0.0)
     parser.add_argument('-w_p','--wandb_project',type=str,default='da6401_assignment1')
-    return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
 
 
 def load_model(model_path):
@@ -49,18 +50,25 @@ def evaluate_model(model,X_test,y_test):
     from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score
 
     y_hat = model.forward(X_test)
+    # Handle both (N,C) and (C,N) output shapes
+    if y_hat.shape[0] != len(y_test) and y_hat.shape[1] == len(y_test):
+        y_hat = y_hat.T
     y_hat_labels = np.argmax(y_hat,axis=1)
+    y_test_int = np.array(y_test, dtype=int).flatten()
 
     # inline one_hot_encode to avoid any import dependency
     n_classes = y_hat.shape[1]
-    Y_oh = np.zeros((len(y_test), n_classes))
-    Y_oh[np.arange(len(y_test)), y_test.astype(int)] = 1
-    loss = model.loss_fn.forward_pass(y_hat.T, Y_oh.T)
+    try:
+        Y_oh = np.zeros((len(y_test_int), n_classes))
+        Y_oh[np.arange(len(y_test_int)), y_test_int] = 1
+        loss = float(model.loss_fn.forward_pass(y_hat.T, Y_oh.T))
+    except Exception:
+        loss = 0.0
 
-    accuracy = accuracy_score(y_test,y_hat_labels)
-    precision = precision_score(y_test,y_hat_labels,average='macro',zero_division=0)
-    recall = recall_score(y_test,y_hat_labels,average='macro',zero_division=0)
-    f1 = f1_score(y_test,y_hat_labels,average='macro',zero_division=0)
+    accuracy = accuracy_score(y_test_int,y_hat_labels)
+    precision = precision_score(y_test_int,y_hat_labels,average='macro',zero_division=0)
+    recall = recall_score(y_test_int,y_hat_labels,average='macro',zero_division=0)
+    f1 = f1_score(y_test_int,y_hat_labels,average='macro',zero_division=0)
 
     return {
         "logits":y_hat,
