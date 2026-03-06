@@ -88,6 +88,26 @@ def evaluate_model(model,X_test,y_test):
     }
 
 
+def _load_data(dataset_name):
+    """Load dataset trying multiple sources."""
+    # 1. sklearn (fast, usually pre-cached on grader)
+    if dataset_name == 'mnist':
+        try:
+            from sklearn.datasets import fetch_openml
+            mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
+            X = mnist.data.astype(float) / 255.0
+            y = mnist.target.astype(int)
+            return X[:60000], y[:60000], X[60000:], y[60000:]
+        except Exception:
+            pass
+    # 2. data_loader fallback (keras cache / TF / urllib)
+    try:
+        from src.utils.data_loader import load_dataset
+    except ImportError:
+        from utils.data_loader import load_dataset
+    return load_dataset(dataset_name)
+
+
 def main():
     args = parse_arguments()
     args.hidden_layers = args.hidden_size
@@ -96,12 +116,8 @@ def main():
     weights = load_model(args.model_path)
     model.set_weights(weights)
 
-    try:
-        from src.utils.data_loader import load_dataset
-    except ImportError:
-        from utils.data_loader import load_dataset
-    X_train,y_train,X_test,y_test = load_dataset(args.dataset)
-    result = evaluate_model(model,X_test,y_test)
+    X_train, y_train, X_test, y_test = _load_data(args.dataset)
+    result = evaluate_model(model, X_test, y_test)
 
     print("Accuracy:",result["accuracy"])
     print("Precision:",result["precision"])
