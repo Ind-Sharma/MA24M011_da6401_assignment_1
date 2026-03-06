@@ -32,19 +32,6 @@ class NeuralNetwork:
     """
 
     def __init__(self, args):
-        # If args has model_path but no loss/hidden_layers, load config from disk
-        if not hasattr(args, 'loss') or not hasattr(args, 'hidden_layers'):
-            model_path = getattr(args, 'model_path', None) or getattr(args, 'model_save_path', None)
-            if model_path:
-                import json, os
-                config_path = model_path.replace('.npy', '_config.json')
-                if os.path.exists(config_path):
-                    with open(config_path, 'r') as f:
-                        config = json.load(f)
-                    for k, v in config.items():
-                        if not hasattr(args, k):
-                            setattr(args, k, v)
-
         # Support both 'hidden_size' (train.py) and 'hidden_layers' (inference.py / grader)
         if not hasattr(args, 'hidden_layers'):
             args.hidden_layers = getattr(args, 'hidden_size', [128])

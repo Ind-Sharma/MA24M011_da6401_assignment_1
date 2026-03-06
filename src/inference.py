@@ -13,24 +13,20 @@ from src.ann.neural_network import NeuralNetwork
 
 
 def parse_arguments():
-    """
-    Parse command-line arguments for inference.
-
-    TODO: Implement argparse with:
-    - model_path: Path to saved model weights(do not give absolute path, rather provide relative path)
-    - dataset: Dataset to evaluate on
-    - batch_size: Batch size for inference
-    - hidden_layers: List of hidden layer sizes
-    - num_neurons: Number of neurons in hidden layers
-    - activation: Activation function ('relu', 'sigmoid', 'tanh')
-    """
     parser = argparse.ArgumentParser(description='Run inference on test set')
     parser.add_argument('-m','--model_path',type=str,default='src/best_model.npy')
     parser.add_argument('-d','--dataset',choices=['mnist','fashion_mnist'],default='mnist')
-    parser.add_argument('-b','--batch_size',type=int,default=64)
-    parser.add_argument('-sz','--hidden_layers',type=int,nargs='+',default=[128])
-    parser.add_argument('-n','--num_neurons',type=int,default=128)
+    parser.add_argument('-e','--epochs',type=int,default=20)
+    parser.add_argument('-b','--batch_size',type=int,default=128)
+    parser.add_argument('-lr','--learning_rate',type=float,default=0.001)
+    parser.add_argument('-o','--optimizer',choices=['sgd','momentum','rmsprop'],default='rmsprop')
+    parser.add_argument('-nhl','--num_layers',type=int,default=2)
+    parser.add_argument('-sz','--hidden_size',type=int,nargs='+',default=[128,128])
     parser.add_argument('-a','--activation',choices=['relu','sigmoid','tanh'],default='relu')
+    parser.add_argument('-l','--loss',choices=['cross_entropy','mse'],default='cross_entropy')
+    parser.add_argument('-w_i','--weight_init',choices=['random','xavier','zeros'],default='xavier')
+    parser.add_argument('-wd','--weight_decay',type=float,default=0.0)
+    parser.add_argument('-w_p','--wandb_project',type=str,default='da6401_assignment1')
     return parser.parse_args()
 
 
@@ -70,22 +66,11 @@ def evaluate_model(model,X_test,y_test):
 
 
 def main():
-    """
-    Main inference function.
-
-    TODO: Must return Dictionary - logits, loss, accuracy, f1, precision, recall
-    """
     args = parse_arguments()
+    args.hidden_layers = args.hidden_size
 
-    model_path = args.model_path
-    config_path = args.model_path.replace(".npy","_config.json")
-
-    with open(config_path,'r') as f:
-        config = json.load(f)
-    nn_args = argparse.Namespace(**config)
-
-    model = NeuralNetwork(nn_args)
-    weights = load_model(model_path)
+    model = NeuralNetwork(args)
+    weights = load_model(args.model_path)
     model.set_weights(weights)
 
     X_train,y_train,X_test,y_test = load_dataset(args.dataset)

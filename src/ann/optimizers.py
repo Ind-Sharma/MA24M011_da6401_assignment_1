@@ -12,7 +12,7 @@ class SGD:
 
     def update(self,layers):
         for layer in layers:
-            grad_W = layer.grad_W+self.wd * layer.W
+            grad_W = layer.grad_W.T+self.wd * layer.W
             grad_b = layer.grad_b
             layer.W = layer.W-self.lr*grad_W
             layer.b = layer.b-self.lr*grad_b
@@ -34,7 +34,7 @@ class Momentum:
 
         for i in range(len(layers)):
             layer = layers[i]
-            nabla_W = layer.grad_W+self.wd*layer.W   # nabla_theta L
+            nabla_W = layer.grad_W.T+self.wd*layer.W   # nabla_theta L
             nabla_b = layer.grad_b
 
             # v_{t+1} = gamma * v_t + eta * nabla_theta L
@@ -65,7 +65,7 @@ class RMSprop:
 
         for i in range(len(layers)):
             layer = layers[i]
-            g_W = layer.grad_W+self.wd*layer.W   # g_t
+            g_W = layer.grad_W.T+self.wd*layer.W   # g_t
             g_b = layer.grad_b
 
             # v_t = beta * v_{t-1} + (1 - beta) * g_t^2
