@@ -155,6 +155,11 @@ class NeuralNetwork:
     def evaluate(self,X,y):
         from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score as f1_score_fn,confusion_matrix as confusion_matrix_fn
 
+        X = np.array(X, dtype=float)
+        if X.ndim == 3:
+            X = X.reshape(X.shape[0], -1)
+        if X.max() > 1.0:
+            X = X / 255.0
         y_hat = self.forward(X)
         y_hat_labels = np.argmax(y_hat,axis=1)
 

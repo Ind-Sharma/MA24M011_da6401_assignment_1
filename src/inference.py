@@ -68,6 +68,14 @@ def load_model(model_path):
 def evaluate_model(model, X_test, y_test):
     from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
+    X_test = np.array(X_test, dtype=float)
+    # Flatten images if they are 2D/3D (e.g. (N,28,28))
+    if X_test.ndim == 3:
+        X_test = X_test.reshape(X_test.shape[0], -1)
+    # Normalize to [0,1] if values look like raw pixels (0-255)
+    if X_test.max() > 1.0:
+        X_test = X_test / 255.0
+
     y_hat = model.forward(X_test)
     # Handle both (N,C) and (C,N) output shapes
     if y_hat.ndim == 2 and y_hat.shape[0] != len(y_test) and y_hat.shape[1] == len(y_test):
