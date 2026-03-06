@@ -51,9 +51,9 @@ class NNLayer:
     def backward_pass(self,dZ):
         batch_size = dZ.shape[1]  # dZ is (m,batch_size)
 
-        # gradient stored as (n_in, n_out) to match expected convention
+        # grad_W shape: (n_out, n_in) — same shape as W, correct for optimizer
         dZ_times_prev_input=np.dot(dZ,self.prev_input.T)
-        self.grad_W=(1/batch_size)*dZ_times_prev_input.T
+        self.grad_W=(1/batch_size)*dZ_times_prev_input
 
         # gradient of loss w.r.t. bias
         num_neurons = dZ.shape[0]

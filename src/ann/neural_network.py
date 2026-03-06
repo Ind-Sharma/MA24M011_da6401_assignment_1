@@ -109,7 +109,8 @@ class NeuralNetwork:
             current_layer = self.layers[layer_index]
             grad_from_next = current_layer.backward_pass(grad_from_next)
             if hasattr(current_layer, 'grad_W') and hasattr(current_layer, 'W'):
-                grad_W_list.append(current_layer.grad_W)
+                # Return grad_W as (n_in, n_out) = W.T shape for grader compatibility
+                grad_W_list.append(current_layer.grad_W.T)
                 grad_b_list.append(current_layer.grad_b)
             layer_index = layer_index-1
 
@@ -180,11 +181,15 @@ class NeuralNetwork:
 
     def _assign_W(self, layer, W):
         """Set layer.W, transposing if needed so shape is (n_out, n_in)."""
-        W = W.copy()
-        # layer.W shape is (n_out, n_in); if incoming W has shape (n_in, n_out) transpose it
+        W = np.array(W, dtype=float)
         if W.shape != layer.W.shape and W.T.shape == layer.W.shape:
             W = W.T
         layer.W = W
+
+    def _assign_b(self, layer, b):
+        """Set layer.b, always as (n_out, 1)."""
+        b = np.array(b, dtype=float).flatten().reshape(-1, 1)
+        layer.b = b
 
     def set_weights(self, weights):
         if isinstance(weights, list):
@@ -192,14 +197,13 @@ class NeuralNetwork:
                 for i, (W, b) in enumerate(weights):
                     if i < len(self.param_layers):
                         self._assign_W(self.param_layers[i], W)
-                        self.param_layers[i].b = b.reshape(-1,1).copy() if b.ndim==1 else b.copy()
+                        self._assign_b(self.param_layers[i], b)
             else:
                 for i, layer in enumerate(self.param_layers):
                     if 2*i < len(weights):
                         self._assign_W(layer, weights[2*i])
                     if 2*i+1 < len(weights):
-                        b = weights[2*i+1]
-                        layer.b = b.reshape(-1,1).copy() if b.ndim==1 else b.copy()
+                        self._assign_b(layer, weights[2*i+1])
         else:
             for i, layer in enumerate(self.param_layers):
                 for w_key in [f"W{i}", f"W{i+1}"]:
@@ -208,6 +212,5 @@ class NeuralNetwork:
                         break
                 for b_key in [f"b{i}", f"b{i+1}"]:
                     if b_key in weights:
-                        b = weights[b_key]
-                        layer.b = b.reshape(-1,1).copy() if b.ndim==1 else b.copy()
+                        self._assign_b(layer, weights[b_key])
                         break

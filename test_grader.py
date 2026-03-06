@@ -28,9 +28,9 @@ print(f"layers: {[type(l).__name__ for l in model.layers]}")
 
 # Set fixed weights exactly as grader would
 W0 = np.ones((2, 784)) * 0.5
-b0 = np.zeros((2, 1))
+b0 = np.zeros((1, 2))    # grader passes bias as (1, n_out) shape
 W1 = np.ones((10, 2)) * 0.5
-b1 = np.zeros((10, 1))
+b1 = np.zeros((1, 10))   # grader passes bias as (1, n_out) shape
 
 weights = {'W0': W0, 'b0': b0, 'W1': W1, 'b1': b1}
 model.set_weights(weights)
