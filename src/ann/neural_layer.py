@@ -19,6 +19,9 @@ def xavier_weight_init(m,n):
             W_list[i,j] = np.random.randn()*(np.sqrt(1.0/n))
     return W_list
 
+def zeros_weight_init(m,n):
+    return np.zeros((m,n))
+
 class NNLayer:
     def __init__(self,m,n,init="xavier"):
         num_neurons_current_layer=m
@@ -30,6 +33,8 @@ class NNLayer:
         # initialize weights
         if init=="random":
             self.W=random_weight_init(num_neurons_current_layer,num_neurons_prev_layer)
+        elif init=="zeros":
+            self.W=zeros_weight_init(num_neurons_current_layer,num_neurons_prev_layer)
         else:
             self.W=xavier_weight_init(num_neurons_current_layer,num_neurons_prev_layer)
 

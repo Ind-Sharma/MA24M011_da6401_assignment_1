@@ -2,6 +2,9 @@
 Main Training Script
 Entry point for training neural networks with command-line arguments
 """
+from dotenv import load_dotenv
+load_dotenv()
+
 import argparse
 import json
 import numpy as np
@@ -18,14 +21,14 @@ def parse_arguments():
     parser.add_argument('-e','--epochs',type=int,default=20)
     parser.add_argument('-b','--batch_size',type=int,default=64)
     parser.add_argument('-lr','--learning_rate',type=float,default=0.01)
-    parser.add_argument('-o','--optimizer',choices=['sgd','momentum','nag','rmsprop','adam','nadam'],default='sgd')
+    parser.add_argument('-o','--optimizer',choices=['sgd','momentum','rmsprop'],default='sgd')
     parser.add_argument('-nhl','--num_layers',type=int,default=1)
     parser.add_argument('-sz','--hidden_size',type=int,nargs='+',default=[128])
     parser.add_argument('-a','--activation',choices=['relu','sigmoid','tanh'],default='relu')
     parser.add_argument('-l','--loss',choices=['cross_entropy','mse'],default='cross_entropy')
-    parser.add_argument('-wi','--weight_init',choices=['random','xavier'],default='xavier')
+    parser.add_argument('-w_i','--weight_init',choices=['random','xavier','zeros'],default='xavier')
     parser.add_argument('-wd','--weight_decay',type=float,default=0.0)
-    parser.add_argument('-wp','--wandb_project',type=str,default='da6401_assignment1')
+    parser.add_argument('-w_p','--wandb_project',type=str,default='da6401_assignment1')
     parser.add_argument('-m','--model_save_path',type=str,default='src/best_model.npy')
     return parser.parse_args()
 

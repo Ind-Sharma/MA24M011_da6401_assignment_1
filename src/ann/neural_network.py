@@ -11,7 +11,7 @@ from .neural_layer import NNLayer
 
 def _get_optimizer(args):
     lr = args.learning_rate
-    wd = args.weight_decay
+    wd = getattr(args,'weight_decay',0.0)
     opt = args.optimizer
 
     if opt == 'sgd':
@@ -123,7 +123,7 @@ class NeuralNetwork:
         y_hat_labels = np.argmax(y_hat,axis=1)
 
         accuracy = accuracy_score(y,y_hat_labels)
-        precision = precision_score(y, y_hat_labels,average='macro')
+        precision = precision_score(y, y_hat_labels,average='macro',zero_division=0)
         recall = recall_score(y, y_hat_labels,average='macro')
         f1_score = f1_score(y, y_hat_labels,average='macro')
         confusion_matrix = confusion_matrix(y,y_hat_labels)
@@ -133,7 +133,7 @@ class NeuralNetwork:
             "precision": float(precision),
             "recall": float(recall),
             "f1": float(f1_score),
-            "confusion_matrix": confusion_matrix,
+            "confusion_matrix": confusion_matrix
         }
 
     def get_weights(self):

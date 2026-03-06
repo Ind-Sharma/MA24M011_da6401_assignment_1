@@ -6,8 +6,8 @@ This assignment implements a neural network from scratch using only NumPy. It in
 
 ## Links
 
-- **Weights & Biases Report**: [Add your W&B report link here]
-- **GitHub Repository**: [Add your GitHub repository link here]
+- **Weights & Biases Report**: https://wandb.ai/ma24m011-iit-madras/da6401_assignment1/reports/DA6401-Assignment-1--VmlldzoxNjEyMjYwNA?accessToken=xms7zzyxzegvjti28b8mxsvql7g4qhclwfhv3p33bbeyj07953mekvyh1zobvmuu
+- **GitHub Repository**: https://github.com/Ind-Sharma/MA24M011_da6401_assignment_1
 
 ## Usage
 

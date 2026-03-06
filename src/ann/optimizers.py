@@ -72,8 +72,8 @@ class RMSprop:
             v_prev_W = self.v_W[i]
             v_prev_b = self.v_b[i]
             self.v_W[i] = self.beta*v_prev_W+(1-self.beta)*(g_W*g_W)
-            self.v_b[i] = self.beta*v_prev_b+(1- self.beta) (g_b*g_b)
+            self.v_b[i] = self.beta*v_prev_b+(1-self.beta)*(g_b*g_b)
 
             # w_new = w_old - (eta / sqrt(v_t + epsilon)) * g_t
-            layer.W = layer.W-(self.eta/(np.sqrt(self.v_W[i])+self.epsilon))*g_W
-            layer.b = layer.b-(self.eta/(np.sqrt(self.v_b[i])+self.epsilon))*g_b
+            layer.W = layer.W -(self.eta/np.sqrt(self.v_W[i]+ self.epsilon)) * g_W
+            layer.b = layer.b -(self.eta/np.sqrt(self.v_b[i]+ self.epsilon)) * g_b

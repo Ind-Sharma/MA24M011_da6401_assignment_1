@@ -55,9 +55,9 @@ def evaluate_model(model,X_test,y_test):
     loss = model.loss_fn.forward_pass(y_hat.T,one_hot_encode(y_test).T)
 
     accuracy = accuracy_score(y_test,y_hat_labels)
-    precision = precision_score(y_test,y_hat_labels,average='macro')
-    recall = recall_score(y_test,y_hat_labels,average='macro')
-    f1 = f1_score(y_test,y_hat_labels,average='macro')
+    precision = precision_score(y_test,y_hat_labels,average='macro',zero_division=0)
+    recall = recall_score(y_test,y_hat_labels,average='macro',zero_division=0)
+    f1 = f1_score(y_test,y_hat_labels,average='macro',zero_division=0)
 
     return {
         "logits":y_hat,
