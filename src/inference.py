@@ -34,13 +34,9 @@ def load_model(model_path):
     _cwd = os.getcwd()
 
     # Always try pretrained_model.npy first — it's never overwritten by train.py
-    pretrained = [
-        os.path.join(_src, 'pretrained_model.npy'),
-        os.path.join(_cwd, 'src', 'pretrained_model.npy'),
-    ]
-    for path in pretrained:
-        if os.path.exists(path):
-            return np.load(path, allow_pickle=True).item()
+    pretrained = os.path.join(_src, 'pretrained_model.npy')
+    if os.path.exists(pretrained):
+        return np.load(pretrained, allow_pickle=True).item()
 
     # Fallback: whatever path was passed (grader saves best_model.npy to CWD)
     fallbacks = [

@@ -120,7 +120,7 @@ class NeuralNetwork:
         return avg_loss
 
     def evaluate(self,X,y):
-        from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score as f1_fn,confusion_matrix as cm_fn
+        from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score as f1_fn
 
         X = np.array(X,dtype=float)
         if X.ndim == 3:
@@ -132,18 +132,11 @@ class NeuralNetwork:
         preds = np.argmax(y_hat,axis=1)
         y = np.array(y,dtype=int).flatten()
 
-        acc = accuracy_score(y,preds)
-        prec = precision_score(y,preds,average='macro',zero_division=0)
-        rec = recall_score(y,preds,average='macro',zero_division=0)
-        f1 = f1_fn(y,preds,average='macro',zero_division=0)
-        cm = cm_fn(y,preds)
-
         return {
-            "accuracy": float(acc),
-            "precision": float(prec),
-            "recall": float(rec),
-            "f1": float(f1),
-            "confusion_matrix": cm
+            "accuracy": float(accuracy_score(y,preds)),
+            "precision": float(precision_score(y,preds,average='macro',zero_division=0)),
+            "recall": float(recall_score(y,preds,average='macro',zero_division=0)),
+            "f1": float(f1_fn(y,preds,average='macro',zero_division=0)),
         }
 
     def get_weights(self):
@@ -161,22 +154,15 @@ class NeuralNetwork:
                 if hasattr(layer,'activation'):
                     layer.activation = self._activation
 
-        if isinstance(weights,dict):
-            W_list = {}
-            b_list = {}
-            for k in weights:
-                if k.startswith('W') and k[1:].isdigit():
-                    W_list[int(k[1:])] = np.array(weights[k],dtype=float)
-                elif k.startswith('b') and k[1:].isdigit():
-                    b_list[int(k[1:])] = np.array(weights[k],dtype=float)
-            W_sorted = [W_list[k] for k in sorted(W_list)]
-            b_sorted = [b_list[k] for k in sorted(b_list)]
-        elif isinstance(weights,list) and len(weights) > 0 and isinstance(weights[0],tuple):
-            W_sorted = [np.array(W,dtype=float) for W,b in weights]
-            b_sorted = [np.array(b,dtype=float) for W,b in weights]
-        else:
-            W_sorted = [np.array(weights[2*i],dtype=float) for i in range(len(weights)//2)]
-            b_sorted = [np.array(weights[2*i+1],dtype=float) for i in range(len(weights)//2)]
+        W_list = {}
+        b_list = {}
+        for k in weights:
+            if k.startswith('W') and k[1:].isdigit():
+                W_list[int(k[1:])] = np.array(weights[k],dtype=float)
+            elif k.startswith('b') and k[1:].isdigit():
+                b_list[int(k[1:])] = np.array(weights[k],dtype=float)
+        W_sorted = [W_list[k] for k in sorted(W_list)]
+        b_sorted = [b_list[k] for k in sorted(b_list)]
 
         if len(W_sorted) == len(self.param_layers):
             for i in range(len(self.param_layers)):
