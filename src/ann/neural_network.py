@@ -15,10 +15,10 @@ class NeuralNetwork:
         layers = []
         prev = 784 # input size for mnist
         for sz in h:
-            layers.append(NNLayer(sz,prev,init=wi)) # hidden layer
+            layers.append(NNLayer(sz ,prev,init=wi)) # hidden layer
             layers.append(ActivationLayer(self._activation)) # activation
             prev = sz
-        layers.append(NNLayer(10,prev,init=wi)) # output layer 10 classes
+        layers.append(NNLayer(10 ,prev,init=wi)) # output layer 10 classes
         self.layers = layers
         self.param_layers = [l for l in layers if hasattr(l,'W')] # only weight layers
         self.loss_fn = LossLayer(getattr(args,'loss','cross_entropy'))
@@ -60,12 +60,12 @@ class NeuralNetwork:
         Y = np.zeros((m,10))
         Y[np.arange(m),y_train.astype(int)] = 1 # one hot labels
         Y = Y.T
-        N = X_train.shape[0] # total samples
+        N = X_train.shape[ 0] # total samples
         avg_loss = 0.0
         for _ in range(epochs):
             idx = np.random.permutation(N) # shuffle
-            Xs = X_train[idx]
-            Ys = Y[:,idx]
+            Xs = X_train[ idx]
+            Ys = Y[ :,idx]
             total = 0.0
             steps = range(0,N,batch_size)
             for s in steps:
