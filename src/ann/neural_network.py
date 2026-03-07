@@ -158,7 +158,7 @@ class NeuralNetwork:
         X = np.array(X, dtype=float)
         if X.ndim == 3:
             X = X.reshape(X.shape[0], -1)
-        if X.max() > 1.0:
+        if X.max() > 2.0:
             X = X / 255.0
         y_hat = self.forward(X)
         y_hat_labels = np.argmax(y_hat,axis=1)

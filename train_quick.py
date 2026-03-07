@@ -31,7 +31,7 @@ def one_hot_encode(y, num_classes=10):
 def main():
     args = argparse.Namespace(
         dataset='mnist',
-        epochs=20,
+        epochs=30,
         batch_size=128,
         learning_rate=0.001,
         optimizer='rmsprop',
