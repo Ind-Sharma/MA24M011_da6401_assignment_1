@@ -233,6 +233,11 @@ class NeuralNetwork:
             W_sorted = [W_arrays[k] for k in sorted(W_arrays)]
             b_sorted = [b_arrays[k] for k in sorted(b_arrays)]
 
+            # Update all ActivationLayers to use the restored activation
+            for layer in self.layers:
+                if hasattr(layer, 'activation'):
+                    layer.activation = self._activation
+
             n_layers = len(self.param_layers)
             n_weights = len(W_sorted)
 
