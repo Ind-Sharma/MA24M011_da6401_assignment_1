@@ -1,18 +1,13 @@
-"""
-Activation Functions and Their Derivatives
-Implements: ReLU, Sigmoid, Tanh, Softmax
-"""
 import numpy as np
 
 
 def sigmoid(z):
-    denom = 1+np.exp(-z)
-    return 1/denom
+    return 1 / (1 + np.exp(-z))
 
 
 def sigmoid_grad(z):
-    act_val = sigmoid(z)
-    return act_val*(1-act_val)
+    s = sigmoid(z)
+    return s * (1 - s)
 
 
 def tanh(z):
@@ -20,8 +15,8 @@ def tanh(z):
 
 
 def tanh_grad(z):
-    act_val = np.tanh(z)
-    return 1-act_val*act_val
+    t = np.tanh(z)
+    return 1 - t * t
 
 
 def relu(z):
@@ -43,11 +38,10 @@ def relu_grad(z):
 
 
 def softmax(z):
-    exp_z = np.exp(z)
-    sum_exp = np.sum(exp_z,axis=0)
-    probs = exp_z/sum_exp
-    return probs
+    shifted = z - np.max(z,axis=0,keepdims=True)
+    exp_z = np.exp(shifted)
+    return exp_z / np.sum(exp_z,axis=0,keepdims=True)
 
 
 def softmax_grad(z):
-    return 1.0  # we are intentionally not using the gradient of softmax with cross entropy loss beacause it simplifies to 1.0 after the multiplication with the gradient from the final layer
+    return 1.0
