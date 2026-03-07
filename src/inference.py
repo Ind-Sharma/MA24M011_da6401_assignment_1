@@ -31,7 +31,6 @@ def parse_arguments():
 
 def load_model(model_path):
     _src = os.path.dirname(os.path.abspath(__file__))
-    _cwd = os.getcwd()
 
     # Always try pretrained_model.npy first — it's never overwritten by train.py
     pretrained = os.path.join(_src, 'pretrained_model.npy')
@@ -39,7 +38,7 @@ def load_model(model_path):
         return np.load(pretrained, allow_pickle=True).item()
 
     # Fallback: grader saves best_model.npy to CWD
-    for path in [os.path.join(_cwd, 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
+    for path in [os.path.join(os.getcwd(), 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
         if os.path.exists(path):
             return np.load(path, allow_pickle=True).item()
 

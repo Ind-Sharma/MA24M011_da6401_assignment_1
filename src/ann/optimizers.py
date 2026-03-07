@@ -27,8 +27,7 @@ class Momentum:
             for layer in layers:
                 self.v_W.append(np.zeros_like(layer.W))
                 self.v_b.append(np.zeros_like(layer.b))
-        for i in range(len(layers)):
-            layer = layers[i]
+        for i,layer in enumerate(layers):
             nabla_W = layer.grad_W + self.wd*layer.W
             nabla_b = layer.grad_b
             self.v_W[i] = self.gamma*self.v_W[i] + self.eta*nabla_W
@@ -51,8 +50,7 @@ class RMSprop:
             for layer in layers:
                 self.v_W.append(np.zeros_like(layer.W))
                 self.v_b.append(np.zeros_like(layer.b))
-        for i in range(len(layers)):
-            layer = layers[i]
+        for i,layer in enumerate(layers):
             g_W = layer.grad_W + self.wd*layer.W
             g_b = layer.grad_b
             self.v_W[i] = self.beta*self.v_W[i] + (1-self.beta)*(g_W*g_W)

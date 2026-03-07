@@ -41,8 +41,6 @@ class NeuralNetwork:
     def __init__(self,args):
         if not hasattr(args,'hidden_layers'):
             args.hidden_layers = getattr(args,'hidden_size',[128])
-        if not hasattr(args,'hidden_size'):
-            args.hidden_size = args.hidden_layers
 
         self._activation = getattr(args,'activation','relu')
         self.layers = _build_network(args)
@@ -96,17 +94,15 @@ class NeuralNetwork:
             X_shuf = X_train[perm]
             Y_shuf = Y[:,perm]
             total_loss = 0.0
-            count = 0
-            for start in range(0,N,batch_size):
+            batches = range(0,N,batch_size)
+            for start in batches:
                 X_b = X_shuf[start:start+batch_size]
                 Y_b = Y_shuf[:,start:start+batch_size]
                 y_hat = self.forward(X_b)
-                loss = self.loss_fn.forward_pass(y_hat.T,Y_b)
+                total_loss += self.loss_fn.forward_pass(y_hat.T,Y_b)
                 self.backward(Y_b.T,y_hat)
-                total_loss = total_loss + loss
-                count = count + 1
                 self.update_weights()
-            avg_loss = total_loss / count
+            avg_loss = total_loss / len(batches)
         return avg_loss
 
     def evaluate(self,X,y):
@@ -156,10 +152,7 @@ class NeuralNetwork:
 
         if len(W_sorted) == len(self.param_layers):
             for i in range(len(self.param_layers)):
-                W = W_sorted[i]
-                if W.shape != self.param_layers[i].W.shape and W.T.shape == self.param_layers[i].W.shape:
-                    W = W.T
-                self.param_layers[i].W = W
+                self.param_layers[i].W = W_sorted[i]
                 self.param_layers[i].b = b_sorted[i].flatten().reshape(-1,1)
         else:
             new_layers = []
