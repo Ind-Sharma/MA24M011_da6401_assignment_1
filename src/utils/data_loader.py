@@ -41,13 +41,12 @@ def load_dataset(dataset_name):
     except Exception:
         pass
 
-    # 2. Fallback: tensorflow
-    import tensorflow as tf
-    if dataset_name == 'mnist':
-        (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
-    else:
-        (X_train, y_train), (X_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
-
-    X_train = X_train.reshape(X_train.shape[0], -1).astype(float) / 255.0
-    X_test  = X_test.reshape(X_test.shape[0],  -1).astype(float) / 255.0
-    return X_train, y_train.astype(int), X_test, y_test.astype(int)
+    # 2. Fallback: tensorflow (only if keras cache missing)
+    # import tensorflow as tf
+    # if dataset_name == 'mnist':
+    #     (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
+    # else:
+    #     (X_train, y_train), (X_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
+    # X_train = X_train.reshape(X_train.shape[0], -1).astype(float) / 255.0
+    # X_test  = X_test.reshape(X_test.shape[0],  -1).astype(float) / 255.0
+    # return X_train, y_train.astype(int), X_test, y_test.astype(int)
