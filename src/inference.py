@@ -72,13 +72,10 @@ def evaluate_model(model, X_test, y_test):
     preds = np.argmax(y_hat, axis=1)
     y_test = np.array(y_test, dtype=int).flatten()
 
-    try:
-        n_classes = y_hat.shape[1]
-        Y_oh = np.zeros((len(y_test), n_classes))
-        Y_oh[np.arange(len(y_test)), y_test] = 1
-        loss = float(model.loss_fn.forward_pass(y_hat.T, Y_oh.T))
-    except Exception:
-        loss = 0.0
+    n_classes = y_hat.shape[1]
+    Y_oh = np.zeros((len(y_test), n_classes))
+    Y_oh[np.arange(len(y_test)), y_test] = 1
+    loss = float(model.loss_fn.forward_pass(y_hat.T, Y_oh.T))
 
     acc  = accuracy_score(y_test, preds)
     prec = precision_score(y_test, preds, average='macro', zero_division=0)
