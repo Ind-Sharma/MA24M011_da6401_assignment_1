@@ -12,7 +12,7 @@ from ann.neural_network import NeuralNetwork
 def parse_arguments():
     _src = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_path', type=str, default=os.path.join(_src, 'pretrained_model.npy'))
+    parser.add_argument('-m', '--model_path', type=str, default=os.path.join(_src, 'best_model.npy'))
     parser.add_argument('-d', '--dataset', choices=['mnist', 'fashion_mnist'], default='mnist')
     parser.add_argument('-e', '--epochs', type=int, default=20)
     parser.add_argument('-b', '--batch_size', type=int, default=128)
@@ -36,19 +36,15 @@ def main():
     _src = os.path.dirname(os.path.abspath(__file__))
     args = parse_arguments()
 
-    # Load model: pretrained_model.npy first (never overwritten by train.py)
-    pretrained = os.path.join(_src, 'pretrained_model.npy')
-    if os.path.exists(pretrained):
-        weights = np.load(pretrained, allow_pickle=True).item()
-    else:
-        loaded = False
-        for path in [os.path.join(os.getcwd(), 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
-            if os.path.exists(path):
-                weights = np.load(path, allow_pickle=True).item()
-                loaded = True
-                break
-        if not loaded:
-            weights = np.load(args.model_path, allow_pickle=True).item()
+    # Load model weights
+    loaded = False
+    for path in [os.path.join(os.getcwd(), 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
+        if os.path.exists(path):
+            weights = np.load(path, allow_pickle=True).item()
+            loaded = True
+            break
+    if not loaded:
+        weights = np.load(args.model_path, allow_pickle=True).item()
 
     w_keys = sorted([k for k in weights if k.startswith('W')], key=lambda k: int(k[1:]))
     hidden = [np.array(weights[k]).shape[0] for k in w_keys[:-1]]
