@@ -40,7 +40,6 @@ def load_model(model_path):
     ]
     for path in pretrained:
         if os.path.exists(path):
-            print('[inference] Loading model from: ' + path)
             return np.load(path, allow_pickle=True).item()
 
     # Fallback: whatever path was passed (grader saves best_model.npy to CWD)
@@ -53,10 +52,8 @@ def load_model(model_path):
     ]
     for path in fallbacks:
         if os.path.exists(path):
-            print('[inference] Loading model from: ' + path)
             return np.load(path, allow_pickle=True).item()
 
-    print('[inference] Loading model from (last resort): ' + model_path)
     return np.load(model_path, allow_pickle=True).item()
 
 
