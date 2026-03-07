@@ -86,10 +86,7 @@ def evaluate_model(model, X_test, y_test):
 
 
 def load_data(dataset_name):
-    try:
-        from utils.data_loader import load_dataset
-    except ImportError:
-        from src.utils.data_loader import load_dataset
+    from utils.data_loader import load_dataset
     return load_dataset(dataset_name)
 
 

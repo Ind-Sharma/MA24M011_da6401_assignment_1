@@ -54,43 +54,13 @@ def load_dataset(dataset_name):
         except Exception:
             pass
 
-    # 3. Try tensorflow.keras
+    # 3. tensorflow.keras
     if not loaded:
-        try:
-            import tensorflow as tf
-            if dataset_name == 'mnist':
-                (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
-            else:
-                (X_train, y_train), (X_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
-            loaded = True
-        except Exception:
-            pass
-
-    # 4. Final fallback: urllib download
-    if not loaded:
-        import gzip, os, urllib.request
+        import tensorflow as tf
         if dataset_name == 'mnist':
-            base_url = 'https://storage.googleapis.com/tensorflow/tf-keras-datasets/'
+            (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
         else:
-            base_url = 'https://storage.googleapis.com/tensorflow/tf-keras-datasets/fashion-mnist/'
-        fnames = ['train-images-idx3-ubyte.gz', 'train-labels-idx1-ubyte.gz',
-                  't10k-images-idx3-ubyte.gz', 't10k-labels-idx1-ubyte.gz']
-        cache_dir = os.path.join(os.path.expanduser('~'), '.cache', 'datasets', dataset_name)
-        os.makedirs(cache_dir, exist_ok=True)
-        paths = []
-        for fn in fnames:
-            p = os.path.join(cache_dir, fn)
-            if not os.path.exists(p):
-                urllib.request.urlretrieve(base_url + fn, p)
-            paths.append(p)
-        def load_img(p):
-            with gzip.open(p, 'rb') as f:
-                return np.frombuffer(f.read(), np.uint8, offset=16).reshape(-1, 28, 28)
-        def load_lbl(p):
-            with gzip.open(p, 'rb') as f:
-                return np.frombuffer(f.read(), np.uint8, offset=8)
-        X_train, y_train = load_img(paths[0]), load_lbl(paths[1])
-        X_test,  y_test  = load_img(paths[2]), load_lbl(paths[3])
+            (X_train, y_train), (X_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
 
     X_train = X_train.reshape(X_train.shape[0], -1).astype(float) / 255.0
     X_test  = X_test.reshape(X_test.shape[0],  -1).astype(float) / 255.0
