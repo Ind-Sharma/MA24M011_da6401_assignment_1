@@ -212,12 +212,15 @@ class NeuralNetwork:
                     self._assign_W(self.param_layers[i], W)
                     self._assign_b(self.param_layers[i], b)
         else:
-            # dict: extract all W/b arrays sorted by key index
+            # First pass: extract _activation before anything else
+            if '_activation' in weights:
+                self._activation = weights['_activation']
+
+            # Second pass: extract W/b arrays
             W_arrays = {}
             b_arrays = {}
             for k, v in weights.items():
                 if k == '_activation':
-                    self._activation = v  # restore activation from saved weights
                     continue
                 if k.startswith('W'):
                     try:
@@ -243,8 +246,7 @@ class NeuralNetwork:
 
             if n_weights != n_layers:
                 # Architecture mismatch: rebuild layers to match incoming weights
-                # Use activation stored in weights dict if available
-                activation = weights.get('_activation', getattr(self, '_activation', 'relu'))
+                activation = self._activation  # already restored above
                 new_layers = []
                 for i, (W, b) in enumerate(zip(W_sorted, b_sorted)):
                     W = np.array(W, dtype=float)
