@@ -1,4 +1,5 @@
 Strict_instructions.md
+src/pretrained_model.npy
 __pycache__/
 *.pyc
 .env
