@@ -39,9 +39,10 @@ def main():
     args = parse_arguments()
     args.hidden_layers = args.hidden_size
 
-    wandb_mode = "online" if os.environ.get("WANDB_API_KEY") else "disabled"
-    wandb.init(project=args.wandb_project, config=vars(args), mode=wandb_mode,
-               settings=wandb.Settings(start_method="thread"))
+    use_wandb = bool(os.environ.get("WANDB_API_KEY"))
+    if use_wandb:
+        wandb.init(project=args.wandb_project, config=vars(args),
+                   settings=wandb.Settings(start_method="thread"))
 
     X_train, y_train, X_test, y_test = load_data(args.dataset)
     model = NeuralNetwork(args)
@@ -52,7 +53,7 @@ def main():
         avg_loss = model.train(X_train, y_train, epochs=1, batch_size=args.batch_size)
         result = model.evaluate(X_test, y_test)
         print("Epoch " + str(ep+1) + "/" + str(args.epochs) + ", loss: " + str(round(avg_loss, 4)) + ", accuracy: " + str(round(result['accuracy'], 4)) + ", f1: " + str(round(result['f1'], 4)))
-        if wandb_mode != "disabled":
+        if use_wandb:
             wandb.log({"epoch": ep+1, "loss": avg_loss, "accuracy": result['accuracy'], "f1": result['f1']})
         if result['f1'] > best_f1:
             best_f1 = result['f1']
@@ -63,9 +64,9 @@ def main():
     result = model.evaluate(X_test, y_test)
     np.save(args.model_save_path, model.get_weights())
 
-    if wandb_mode != "disabled":
+    if use_wandb:
         wandb.log({"test_accuracy": result['accuracy'], "test_f1": result['f1']})
-    wandb.finish(quiet=True)
+        wandb.finish(quiet=True)
 
     print("\n--- Final metrics ---")
     print("Accuracy: " + str(result['accuracy']))
