@@ -2,7 +2,6 @@ import argparse
 import numpy as np
 import os
 import sys
-import wandb
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ann.neural_network import NeuralNetwork
 
 
-def parse_arguments():
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dataset', choices=['mnist', 'fashion_mnist'], default='mnist')
     parser.add_argument('-e', '--epochs', type=int, default=20)
@@ -27,15 +26,11 @@ def parse_arguments():
     _src = os.path.dirname(os.path.abspath(__file__))
     parser.add_argument('-m', '--model_save_path', type=str, default=os.path.join(_src, 'trained_model.npy'))
     args, _ = parser.parse_known_args()
-    return args
-
-
-def main():
-    args = parse_arguments()
     args.hidden_layers = args.hidden_size
 
     use_wandb = bool(os.environ.get("WANDB_API_KEY"))
     if use_wandb:
+        import wandb
         wandb.init(project=args.wandb_project, config=vars(args),
                    settings=wandb.Settings(start_method="thread"))
 
