@@ -23,7 +23,7 @@ def main():
     p.add_argument('-wd','--weight_decay',type=float,default=0.0)
     p.add_argument('-w_p','--wandb_project',type=str,default='da6401_assignment1')
     src = os.path.dirname(os.path.abspath(__file__))
-    p.add_argument('-m','--model_save_path',type=str,default=os.path.join(src,'best_model.npy'))
+    p.add_argument('-m','--model_save_path',type=str,default=os.path.join(src,'trained_model.npy'))
     args,_ = p.parse_known_args()
     args.hidden_layers = args.hidden_size
 
