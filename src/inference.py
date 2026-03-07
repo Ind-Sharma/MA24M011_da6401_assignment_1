@@ -31,77 +31,66 @@ def parse_arguments():
 
 def load_model(model_path):
     _src = os.path.dirname(os.path.abspath(__file__))
+    _cwd = os.getcwd()
     candidates = [
-        model_path,
-        os.path.join(_src,'best_model.npy'),
-        os.path.join(os.getcwd(),'src','best_model.npy'),
-        os.path.join(os.getcwd(),'best_model.npy'),
+        os.path.join(_cwd, model_path),
+        os.path.abspath(model_path),
+        os.path.join(_cwd, 'best_model.npy'),
+        os.path.join(_cwd, 'src', 'best_model.npy'),
+        os.path.join(_src, 'best_model.npy'),
     ]
     for path in candidates:
-        abs_path = os.path.abspath(path)
-        if os.path.exists(abs_path):
-            return np.load(abs_path,allow_pickle=True).item()
-    return np.load(model_path,allow_pickle=True).item()
+        if os.path.exists(path):
+            print('[inference] Loading model from: ' + path)
+            return np.load(path, allow_pickle=True).item()
+    print('[inference] Loading model from (fallback): ' + model_path)
+    return np.load(model_path, allow_pickle=True).item()
 
 
-def evaluate_model(model,X_test,y_test):
-    from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score
+def evaluate_model(model, X_test, y_test):
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-    X_test = np.array(X_test,dtype=float)
+    X_test = np.array(X_test, dtype=float)
     if X_test.ndim == 3:
-        X_test = X_test.reshape(X_test.shape[0],-1)
+        X_test = X_test.reshape(X_test.shape[0], -1)
     if X_test.max() > 2.0:
         X_test = X_test / 255.0
 
     y_hat = model.forward(X_test)
     if y_hat.ndim == 2 and y_hat.shape[0] != len(y_test) and y_hat.shape[1] == len(y_test):
         y_hat = y_hat.T
-    preds = np.argmax(y_hat,axis=1)
-    y_test = np.array(y_test,dtype=int).flatten()
+    preds = np.argmax(y_hat, axis=1)
+    y_test = np.array(y_test, dtype=int).flatten()
 
     n_classes = y_hat.shape[1]
-    Y_oh = np.zeros((len(y_test),n_classes))
-    Y_oh[np.arange(len(y_test)),y_test] = 1
-    loss = float(model.loss_fn.forward_pass(y_hat.T,Y_oh.T))
+    Y_oh = np.zeros((len(y_test), n_classes))
+    Y_oh[np.arange(len(y_test)), y_test] = 1
+    loss = float(model.loss_fn.forward_pass(y_hat.T, Y_oh.T))
 
-    acc = accuracy_score(y_test,preds)
-    prec = precision_score(y_test,preds,average='macro',zero_division=0)
-    rec = recall_score(y_test,preds,average='macro',zero_division=0)
-    f1 = f1_score(y_test,preds,average='macro',zero_division=0)
+    acc = accuracy_score(y_test, preds)
+    prec = precision_score(y_test, preds, average='macro', zero_division=0)
+    rec = recall_score(y_test, preds, average='macro', zero_division=0)
+    f1 = f1_score(y_test, preds, average='macro', zero_division=0)
 
-    return {"logits":y_hat,"loss":loss,"accuracy":acc,"f1":f1,"precision":prec,"recall":rec}
+    return {"logits": y_hat, "loss": loss, "accuracy": acc, "f1": f1, "precision": prec, "recall": rec}
 
 
 def load_data(dataset_name):
     import tensorflow as tf
     if dataset_name == 'mnist':
-        loaded = False
-        try:
-            from sklearn.datasets import fetch_openml
-            data = fetch_openml('mnist_784',version=1,as_frame=False,parser='liac-arff')
-            X = data.data.astype(float) / 255.0
-            y = data.target.astype(int)
-            loaded = True
-            return X[:60000],y[:60000],X[60000:],y[60000:]
-        except Exception:
-            pass
-        if not loaded:
-            (X_train,y_train),(X_test,y_test) = tf.keras.datasets.mnist.load_data()
-            X_train = X_train.reshape(X_train.shape[0],-1) / 255.0
-            X_test = X_test.reshape(X_test.shape[0],-1) / 255.0
-            return X_train,y_train.astype(int),X_test,y_test.astype(int)
+        (X_train,y_train),(X_test,y_test) = tf.keras.datasets.mnist.load_data()
     else:
         (X_train,y_train),(X_test,y_test) = tf.keras.datasets.fashion_mnist.load_data()
-        X_train = X_train.reshape(X_train.shape[0],-1) / 255.0
-        X_test = X_test.reshape(X_test.shape[0],-1) / 255.0
-        return X_train,y_train.astype(int),X_test,y_test.astype(int)
+    X_train = X_train.reshape(X_train.shape[0],-1).astype(float) / 255.0
+    X_test = X_test.reshape(X_test.shape[0],-1).astype(float) / 255.0
+    return X_train, y_train.astype(int), X_test, y_test.astype(int)
 
 
 def main():
     args = parse_arguments()
     weights = load_model(args.model_path)
 
-    w_keys = sorted([k for k in weights if k.startswith('W')],key=lambda k: int(k[1:]))
+    w_keys = sorted([k for k in weights if k.startswith('W')], key=lambda k: int(k[1:]))
     shapes = [np.array(weights[k]).shape for k in w_keys]
     hidden = [s[0] for s in shapes[:-1]]
     args.hidden_size = hidden
@@ -110,14 +99,14 @@ def main():
     model = NeuralNetwork(args)
     model.set_weights(weights)
 
-    _,_,X_test,y_test = load_data(args.dataset)
-    result = evaluate_model(model,X_test,y_test)
+    _, _, X_test, y_test = load_data(args.dataset)
+    result = evaluate_model(model, X_test, y_test)
 
-    print("Accuracy:",result["accuracy"])
-    print("Precision:",result["precision"])
-    print("Recall:",result["recall"])
-    print("F1-score:",result["f1"])
-    print("Loss:",result["loss"])
+    print("Accuracy:", result["accuracy"])
+    print("Precision:", result["precision"])
+    print("Recall:", result["recall"])
+    print("F1-score:", result["f1"])
+    print("Loss:", result["loss"])
     print("Evaluation complete!")
 
     return result
