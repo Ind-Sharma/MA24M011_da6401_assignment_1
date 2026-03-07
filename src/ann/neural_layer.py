@@ -5,7 +5,7 @@ class NNLayer:
     def __init__(self,m,n,init="xavier"):
         self.b = np.zeros((m,1)) # bias starts at zero
         if init=="random":
-            self.W = np.random.randn(m,n) # randome weights
+            self.W =np.random.randn(m,n) # randome weights
         elif init=="zeros":
             self.W  = np.zeros((m,n)) # all zeros
         else:
