@@ -87,7 +87,6 @@ class NeuralNetwork:
         Y = Y.T
 
         N = X_train.shape[0]
-        avg_loss = 0.0
         for ep in range(epochs):
             perm = np.random.permutation(N)
             X_shuf = X_train[perm]

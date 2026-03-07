@@ -1,7 +1,3 @@
-"""
-Activation Functions and Their Derivatives
-Implements: ReLU, Sigmoid, Tanh, Softmax
-"""
 import numpy as np
 
 
@@ -35,7 +31,3 @@ def softmax(z):
     shifted = z - np.max(z,axis=0,keepdims=True)
     exp_z = np.exp(shifted)
     return exp_z / np.sum(exp_z,axis=0,keepdims=True)
-
-
-def softmax_grad(z):
-    return 1.0

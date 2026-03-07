@@ -32,12 +32,10 @@ def parse_arguments():
 def load_model(model_path):
     _src = os.path.dirname(os.path.abspath(__file__))
 
-    # Always try pretrained_model.npy first — it's never overwritten by train.py
     pretrained = os.path.join(_src, 'pretrained_model.npy')
     if os.path.exists(pretrained):
         return np.load(pretrained, allow_pickle=True).item()
 
-    # Fallback: grader saves best_model.npy to CWD
     for path in [os.path.join(os.getcwd(), 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
         if os.path.exists(path):
             return np.load(path, allow_pickle=True).item()
@@ -45,11 +43,23 @@ def load_model(model_path):
     return np.load(model_path, allow_pickle=True).item()
 
 
-def evaluate_model(model, X_test, y_test):
+def main():
     from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+    from utils.data_loader import load_dataset
 
-    X_test = np.array(X_test, dtype=float)
-    y_hat = model.forward(X_test)
+    args = parse_arguments()
+    weights = load_model(args.model_path)
+
+    w_keys = sorted([k for k in weights if k.startswith('W')], key=lambda k: int(k[1:]))
+    hidden = [np.array(weights[k]).shape[0] for k in w_keys[:-1]]
+    args.hidden_size = hidden
+    args.hidden_layers = hidden
+
+    model = NeuralNetwork(args)
+    model.set_weights(weights)
+
+    _, _, X_test, y_test = load_dataset(args.dataset)
+    y_hat = model.forward(np.array(X_test, dtype=float))
     preds = np.argmax(y_hat, axis=1)
     y_test = np.array(y_test, dtype=int).flatten()
 
@@ -58,30 +68,14 @@ def evaluate_model(model, X_test, y_test):
     Y_oh[np.arange(len(y_test)), y_test] = 1
     loss = float(model.loss_fn.forward_pass(y_hat.T, Y_oh.T))
 
-    acc  = accuracy_score(y_test, preds)
-    prec = precision_score(y_test, preds, average='macro', zero_division=0)
-    rec  = recall_score(y_test, preds, average='macro', zero_division=0)
-    f1   = f1_score(y_test, preds, average='macro', zero_division=0)
-
-    return {"logits": y_hat, "loss": loss, "accuracy": acc, "f1": f1, "precision": prec, "recall": rec}
-
-
-def main():
-    args = parse_arguments()
-    weights = load_model(args.model_path)
-
-    w_keys = sorted([k for k in weights if k.startswith('W')], key=lambda k: int(k[1:]))
-    shapes = [np.array(weights[k]).shape for k in w_keys]
-    hidden = [s[0] for s in shapes[:-1]]
-    args.hidden_size = hidden
-    args.hidden_layers = hidden
-
-    model = NeuralNetwork(args)
-    model.set_weights(weights)
-
-    from utils.data_loader import load_dataset
-    _, _, X_test, y_test = load_dataset(args.dataset)
-    result = evaluate_model(model, X_test, y_test)
+    result = {
+        "logits": y_hat,
+        "loss": loss,
+        "accuracy": accuracy_score(y_test, preds),
+        "precision": precision_score(y_test, preds, average='macro', zero_division=0),
+        "recall": recall_score(y_test, preds, average='macro', zero_division=0),
+        "f1": f1_score(y_test, preds, average='macro', zero_division=0),
+    }
 
     print("Accuracy:",  result["accuracy"])
     print("Precision:", result["precision"])
