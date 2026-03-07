@@ -165,16 +165,10 @@ class NeuralNetwork:
             W_list = {}
             b_list = {}
             for k in weights:
-                if k.startswith('W'):
-                    try:
-                        W_list[int(k[1:])] = np.array(weights[k],dtype=float)
-                    except:
-                        pass
-                elif k.startswith('b'):
-                    try:
-                        b_list[int(k[1:])] = np.array(weights[k],dtype=float)
-                    except:
-                        pass
+                if k.startswith('W') and k[1:].isdigit():
+                    W_list[int(k[1:])] = np.array(weights[k],dtype=float)
+                elif k.startswith('b') and k[1:].isdigit():
+                    b_list[int(k[1:])] = np.array(weights[k],dtype=float)
             W_sorted = [W_list[k] for k in sorted(W_list)]
             b_sorted = [b_list[k] for k in sorted(b_list)]
         elif isinstance(weights,list) and len(weights) > 0 and isinstance(weights[0],tuple):

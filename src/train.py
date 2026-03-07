@@ -1,43 +1,24 @@
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
 import argparse
 import numpy as np
 import os
 import sys
+import wandb
 
-_src_dir = os.path.dirname(os.path.abspath(__file__))
-_root_dir = os.path.dirname(_src_dir)
-sys.path.insert(0,_root_dir)
-sys.path.insert(0,_src_dir)
+sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from ann.neural_network import NeuralNetwork
-except ImportError:
-    from src.ann.neural_network import NeuralNetwork
+from ann.neural_network import NeuralNetwork
 
 
-def _load_data(dataset_name):
+def load_data(dataset_name):
+    import tensorflow as tf
     if dataset_name == 'mnist':
-        try:
-            from sklearn.datasets import fetch_openml
-            try:
-                data = fetch_openml('mnist_784',version=1,as_frame=False,parser='auto')
-            except TypeError:
-                data = fetch_openml('mnist_784',version=1,as_frame=False)
-            X = data.data.astype(float) / 255.0
-            y = data.target.astype(int)
-            return X[:60000],y[:60000],X[60000:],y[60000:]
-        except Exception:
-            pass
-    try:
-        from utils.data_loader import load_dataset
-    except ImportError:
-        from src.utils.data_loader import load_dataset
-    return load_dataset(dataset_name)
+        (X_train,y_train),(X_test,y_test) = tf.keras.datasets.mnist.load_data()
+    else:
+        (X_train,y_train),(X_test,y_test) = tf.keras.datasets.fashion_mnist.load_data()
+    X_train = X_train.reshape(X_train.shape[0],-1) / 255.0
+    X_test = X_test.reshape(X_test.shape[0],-1) / 255.0
+    return X_train,y_train,X_test,y_test
 
 
 def parse_arguments():
@@ -54,8 +35,8 @@ def parse_arguments():
     parser.add_argument('-w_i','--weight_init',choices=['random','xavier','zeros'],default='xavier')
     parser.add_argument('-wd','--weight_decay',type=float,default=0.0)
     parser.add_argument('-w_p','--wandb_project',type=str,default='da6401_assignment1')
-    _default_save = os.path.join(_src_dir,'trained_model.npy')
-    parser.add_argument('-m','--model_save_path',type=str,default=_default_save)
+    _src = os.path.dirname(os.path.abspath(__file__))
+    parser.add_argument('-m','--model_save_path',type=str,default=os.path.join(_src,'best_model.npy'))
     args,_ = parser.parse_known_args()
     return args
 
@@ -64,12 +45,11 @@ def main():
     args = parse_arguments()
     args.hidden_layers = args.hidden_size
 
-    import wandb
     wandb_mode = "online" if os.environ.get("WANDB_API_KEY") else "disabled"
     wandb.init(project=args.wandb_project,config=vars(args),mode=wandb_mode,
                settings=wandb.Settings(start_method="thread"))
 
-    X_train,y_train,X_test,y_test = _load_data(args.dataset)
+    X_train,y_train,X_test,y_test = load_data(args.dataset)
     model = NeuralNetwork(args)
 
     best_f1 = 0.0
@@ -78,6 +58,8 @@ def main():
         avg_loss = model.train(X_train,y_train,epochs=1,batch_size=args.batch_size)
         result = model.evaluate(X_test,y_test)
         print("Epoch "+str(ep+1)+"/"+str(args.epochs)+", loss: "+str(round(avg_loss,4))+", accuracy: "+str(round(result['accuracy'],4))+", f1: "+str(round(result['f1'],4)))
+        if wandb_mode != "disabled":
+            wandb.log({"epoch":ep+1,"loss":avg_loss,"accuracy":result['accuracy'],"f1":result['f1']})
         if result['f1'] > best_f1:
             best_f1 = result['f1']
             best_weights = model.get_weights()
