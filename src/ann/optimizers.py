@@ -8,8 +8,9 @@ class SGD:
 
     def update(self,layers):
         for layer in layers:
-            layer.W -= self.lr * (layer.grad_W + self.wd*layer.W)
-            layer.b -= self.lr * layer.grad_b
+            grad_W = layer.grad_W + self.wd*layer.W
+            layer.W = layer.W - self.lr*grad_W
+            layer.b = layer.b - self.lr*layer.grad_b
 
 
 class Momentum:
@@ -27,8 +28,8 @@ class Momentum:
         for i,layer in enumerate(layers):
             self.v_W[i] = self.gamma*self.v_W[i] + self.eta*(layer.grad_W + self.wd*layer.W)
             self.v_b[i] = self.gamma*self.v_b[i] + self.eta*layer.grad_b
-            layer.W -= self.v_W[i]
-            layer.b -= self.v_b[i]
+            layer.W = layer.W - self.v_W[i]
+            layer.b = layer.b - self.v_b[i]
 
 
 class RMSprop:
@@ -48,5 +49,5 @@ class RMSprop:
             g_W = layer.grad_W + self.wd*layer.W
             self.v_W[i] = self.beta*self.v_W[i] + (1-self.beta)*(g_W*g_W)
             self.v_b[i] = self.beta*self.v_b[i] + (1-self.beta)*(layer.grad_b*layer.grad_b)
-            layer.W -= (self.eta/np.sqrt(self.v_W[i]+self.epsilon))*g_W
-            layer.b -= (self.eta/np.sqrt(self.v_b[i]+self.epsilon))*layer.grad_b
+            layer.W = layer.W - (self.eta/np.sqrt(self.v_W[i]+self.epsilon))*g_W
+            layer.b = layer.b - (self.eta/np.sqrt(self.v_b[i]+self.epsilon))*layer.grad_b
