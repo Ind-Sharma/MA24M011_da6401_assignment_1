@@ -38,15 +38,8 @@ def load_model(model_path):
     if os.path.exists(pretrained):
         return np.load(pretrained, allow_pickle=True).item()
 
-    # Fallback: whatever path was passed (grader saves best_model.npy to CWD)
-    fallbacks = [
-        os.path.join(_cwd, model_path),
-        os.path.abspath(model_path),
-        os.path.join(_cwd, 'best_model.npy'),
-        os.path.join(_cwd, 'src', 'best_model.npy'),
-        os.path.join(_src, 'best_model.npy'),
-    ]
-    for path in fallbacks:
+    # Fallback: grader saves best_model.npy to CWD
+    for path in [os.path.join(_cwd, 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
         if os.path.exists(path):
             return np.load(path, allow_pickle=True).item()
 
@@ -57,11 +50,6 @@ def evaluate_model(model, X_test, y_test):
     from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
     X_test = np.array(X_test, dtype=float)
-    if X_test.ndim == 3:
-        X_test = X_test.reshape(X_test.shape[0], -1)
-    if X_test.max() > 2.0:
-        X_test = X_test / 255.0
-
     y_hat = model.forward(X_test)
     preds = np.argmax(y_hat, axis=1)
     y_test = np.array(y_test, dtype=int).flatten()

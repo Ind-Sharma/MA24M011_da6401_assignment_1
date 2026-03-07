@@ -7,12 +7,8 @@ from .neural_layer import NNLayer,ActivationLayer
 def _build_network(args):
     inp_dim = 784
     out_dim = 10
-    h = getattr(args,'hidden_layers',None)
-    if h is None:
-        h = getattr(args,'hidden_size',[128])
-    if h is None:
-        h = [128]
-    if isinstance(h,int):
+    h = getattr(args,'hidden_layers', getattr(args,'hidden_size',[128]))
+    if isinstance(h, int):
         h = [h]
     weight_init = getattr(args,'weight_init','xavier')
     activation = getattr(args,'activation','relu')
@@ -74,14 +70,11 @@ class NeuralNetwork:
         loss = self.loss_fn.forward_pass(y_hat.T,y.T)
         grad_from_next = self.loss_fn.backward_pass()
 
-        i = len(self.layers) - 1
-        while i >= 0:
-            current_layer = self.layers[i]
+        for current_layer in reversed(self.layers):
             grad_from_next = current_layer.backward_pass(grad_from_next)
             if hasattr(current_layer,'grad_W') and hasattr(current_layer,'W'):
                 grad_W_list.append(current_layer.grad_W.T)
                 grad_b_list.append(current_layer.grad_b)
-            i = i - 1
 
         self.grad_W = grad_W_list
         self.grad_b = grad_b_list
@@ -105,11 +98,8 @@ class NeuralNetwork:
             total_loss = 0.0
             count = 0
             for start in range(0,N,batch_size):
-                end = start + batch_size
-                if end > N:
-                    end = N
-                X_b = X_shuf[start:end]
-                Y_b = Y_shuf[:,start:end]
+                X_b = X_shuf[start:start+batch_size]
+                Y_b = Y_shuf[:,start:start+batch_size]
                 y_hat = self.forward(X_b)
                 loss = self.loss_fn.forward_pass(y_hat.T,Y_b)
                 self.backward(Y_b.T,y_hat)
