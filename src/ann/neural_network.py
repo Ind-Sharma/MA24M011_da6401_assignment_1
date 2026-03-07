@@ -15,7 +15,6 @@ class NeuralNetwork:
         if isinstance(h,int):
             h = [h]
 
-        # Build layers
         layers = []
         prev = 784
         for size in h:
@@ -28,7 +27,6 @@ class NeuralNetwork:
 
         self.loss_fn = LossLayer(getattr(args,'loss','cross_entropy'))
 
-        # Build optimizer
         lr = getattr(args,'learning_rate',0.01)
         wd = getattr(args,'weight_decay',0.0)
         opt = getattr(args,'optimizer','sgd')
@@ -75,7 +73,7 @@ class NeuralNetwork:
         Y[np.arange(m),y_train.astype(int)] = 1
         Y = Y.T
         N = X_train.shape[0]
-        for ep in range(epochs):
+        for _ in range(epochs):
             perm = np.random.permutation(N)
             X_shuf = X_train[perm]
             Y_shuf = Y[:,perm]

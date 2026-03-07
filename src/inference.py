@@ -9,9 +9,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ann.neural_network import NeuralNetwork
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser()
+def main():
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+    from utils.data_loader import load_dataset
+
     _src = os.path.dirname(os.path.abspath(__file__))
+    parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_path', type=str, default=os.path.join(_src, 'pretrained_model.npy'))
     parser.add_argument('-d', '--dataset', choices=['mnist', 'fashion_mnist'], default='mnist')
     parser.add_argument('-e', '--epochs', type=int, default=20)
@@ -26,29 +29,20 @@ def parse_arguments():
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.0)
     parser.add_argument('-w_p', '--wandb_project', type=str, default='da6401_assignment1')
     args, _ = parser.parse_known_args()
-    return args
 
-
-def load_model(model_path):
-    _src = os.path.dirname(os.path.abspath(__file__))
-
+    # Load model: pretrained_model.npy first (never overwritten by train.py)
     pretrained = os.path.join(_src, 'pretrained_model.npy')
     if os.path.exists(pretrained):
-        return np.load(pretrained, allow_pickle=True).item()
-
-    for path in [os.path.join(os.getcwd(), 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
-        if os.path.exists(path):
-            return np.load(path, allow_pickle=True).item()
-
-    return np.load(model_path, allow_pickle=True).item()
-
-
-def main():
-    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-    from utils.data_loader import load_dataset
-
-    args = parse_arguments()
-    weights = load_model(args.model_path)
+        weights = np.load(pretrained, allow_pickle=True).item()
+    else:
+        loaded = False
+        for path in [os.path.join(os.getcwd(), 'best_model.npy'), os.path.join(_src, 'best_model.npy')]:
+            if os.path.exists(path):
+                weights = np.load(path, allow_pickle=True).item()
+                loaded = True
+                break
+        if not loaded:
+            weights = np.load(args.model_path, allow_pickle=True).item()
 
     w_keys = sorted([k for k in weights if k.startswith('W')], key=lambda k: int(k[1:]))
     hidden = [np.array(weights[k]).shape[0] for k in w_keys[:-1]]
