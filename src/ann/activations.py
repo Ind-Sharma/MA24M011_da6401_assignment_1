@@ -24,21 +24,11 @@ def tanh_grad(z):
 
 
 def relu(z):
-    output = np.zeros_like(z)
-    for i in range(z.shape[0]):
-        for j in range(z.shape[1]):
-            if z[i,j] > 0:
-                output[i,j] = z[i,j]
-    return output
+    return np.maximum(0, z)
 
 
 def relu_grad(z):
-    output = np.zeros_like(z)
-    for i in range(z.shape[0]):
-        for j in range(z.shape[1]):
-            if z[i,j] > 0:
-                output[i,j] = 1.0
-    return output
+    return (z > 0).astype(float)
 
 
 def softmax(z):

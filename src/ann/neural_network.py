@@ -64,10 +64,11 @@ class NeuralNetwork:
         grad_W_list = []
         grad_b_list = []
 
-        if y.ndim == 1 or (y.ndim == 2 and y.shape[1] == 1):
+        if y.ndim == 1 or (y.ndim == 2 and min(y.shape) == 1):
             n_classes = y_hat.shape[1] if y_hat.ndim == 2 else 10
-            y_oh = np.zeros((len(y),n_classes))
-            y_oh[np.arange(len(y)),y.astype(int).flatten()] = 1.0
+            y_flat = y.astype(int).flatten()
+            y_oh = np.zeros((len(y_flat),n_classes))
+            y_oh[np.arange(len(y_flat)),y_flat] = 1.0
             y = y_oh
 
         loss = self.loss_fn.forward_pass(y_hat.T,y.T)
@@ -92,8 +93,7 @@ class NeuralNetwork:
     def train(self,X_train,y_train,epochs=1,batch_size=32):
         m = len(y_train)
         Y = np.zeros((m,10))
-        for i in range(m):
-            Y[i,int(y_train[i])] = 1
+        Y[np.arange(m),y_train.astype(int)] = 1
         Y = Y.T
 
         N = X_train.shape[0]
