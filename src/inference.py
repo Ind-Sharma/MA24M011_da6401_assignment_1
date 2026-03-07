@@ -67,8 +67,6 @@ def evaluate_model(model, X_test, y_test):
         X_test = X_test / 255.0
 
     y_hat = model.forward(X_test)
-    if y_hat.ndim == 2 and y_hat.shape[0] != len(y_test) and y_hat.shape[1] == len(y_test):
-        y_hat = y_hat.T
     preds = np.argmax(y_hat, axis=1)
     y_test = np.array(y_test, dtype=int).flatten()
 
