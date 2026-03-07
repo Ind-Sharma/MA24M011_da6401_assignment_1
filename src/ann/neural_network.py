@@ -152,7 +152,10 @@ class NeuralNetwork:
 
         if len(W_sorted) == len(self.param_layers):
             for i in range(len(self.param_layers)):
-                self.param_layers[i].W = W_sorted[i]
+                W = W_sorted[i]
+                if W.shape != self.param_layers[i].W.shape and W.T.shape == self.param_layers[i].W.shape:
+                    W = W.T
+                self.param_layers[i].W = W
                 self.param_layers[i].b = b_sorted[i].flatten().reshape(-1,1)
         else:
             new_layers = []
