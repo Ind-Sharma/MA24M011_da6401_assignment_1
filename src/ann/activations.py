@@ -10,15 +10,6 @@ def sigmoid_grad(z):
     return s * (1 - s)
 
 
-def tanh(z):
-    return np.tanh(z)
-
-
-def tanh_grad(z):
-    t = np.tanh(z)
-    return 1 - t * t
-
-
 def relu(z):
     return np.maximum(0, z)
 
@@ -28,6 +19,6 @@ def relu_grad(z):
 
 
 def softmax(z):
-    shifted = z - np.max(z,axis=0,keepdims=True)
+    shifted = z - np.max(z, axis=0, keepdims=True)
     exp_z = np.exp(shifted)
-    return exp_z / np.sum(exp_z,axis=0,keepdims=True)
+    return exp_z / np.sum(exp_z, axis=0, keepdims=True)

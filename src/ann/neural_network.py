@@ -43,28 +43,18 @@ class NeuralNetwork:
             a = layer.forward_pass(a)
         return a.T
 
-    def backward(self,y,y_hat):
-        grad_W_list = []
-        grad_b_list = []
-
+    def backward(self, y, y_hat):
         if y.ndim == 1 or (y.ndim == 2 and min(y.shape) == 1):
             y_flat = y.astype(int).flatten()
-            y_oh = np.zeros((len(y_flat),10))
-            y_oh[np.arange(len(y_flat)),y_flat] = 1.0
+            y_oh = np.zeros((len(y_flat), 10))
+            y_oh[np.arange(len(y_flat)), y_flat] = 1.0
             y = y_oh
 
-        self.loss_fn.forward_pass(y_hat.T,y.T)
+        self.loss_fn.forward_pass(y_hat.T, y.T)
         grad_from_next = self.loss_fn.backward_pass()
 
         for layer in reversed(self.layers):
             grad_from_next = layer.backward_pass(grad_from_next)
-            if hasattr(layer,'grad_W'):
-                grad_W_list.append(layer.grad_W.T)
-                grad_b_list.append(layer.grad_b)
-
-        self.grad_W = grad_W_list
-        self.grad_b = grad_b_list
-        return self.grad_W,self.grad_b
 
     def train(self,X_train,y_train,epochs=1,batch_size=32):
         m = len(y_train)

@@ -1,5 +1,5 @@
 import numpy as np
-from .activations import sigmoid,sigmoid_grad,tanh,tanh_grad,relu,relu_grad
+from .activations import sigmoid, sigmoid_grad, relu, relu_grad
 
 
 class NNLayer:
@@ -31,17 +31,18 @@ class ActivationLayer:
         self.activation = activation
         self.input = None
 
-    def forward_pass(self,x):
+    def forward_pass(self, x):
         self.input = x
         if self.activation == "sigmoid":
             return sigmoid(x)
         if self.activation == "tanh":
-            return tanh(x)
+            return np.tanh(x)
         return relu(x)
 
-    def backward_pass(self,grad_from_next):
+    def backward_pass(self, grad_from_next):
         if self.activation == "sigmoid":
             return grad_from_next * sigmoid_grad(self.input)
         if self.activation == "tanh":
-            return grad_from_next * tanh_grad(self.input)
+            t = np.tanh(self.input)
+            return grad_from_next * (1 - t * t)
         return grad_from_next * relu_grad(self.input)

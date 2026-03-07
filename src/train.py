@@ -38,33 +38,22 @@ def main():
     X_train, y_train, X_test, y_test = load_dataset(args.dataset)
     model = NeuralNetwork(args)
 
-    best_f1 = 0.0
-    best_weights = None
     for ep in range(args.epochs):
         avg_loss = model.train(X_train, y_train, epochs=1, batch_size=args.batch_size)
         result = model.evaluate(X_test, y_test)
         print("Epoch " + str(ep+1) + "/" + str(args.epochs) + ", loss: " + str(round(avg_loss, 4)) + ", accuracy: " + str(round(result['accuracy'], 4)) + ", f1: " + str(round(result['f1'], 4)))
         if use_wandb:
             wandb.log({"epoch": ep+1, "loss": avg_loss, "accuracy": result['accuracy'], "f1": result['f1']})
-        if result['f1'] > best_f1:
-            best_f1 = result['f1']
-            best_weights = model.get_weights()
 
-    if best_weights is not None:
-        model.set_weights(best_weights)
-    result = model.evaluate(X_test, y_test)
     np.save(args.model_save_path, model.get_weights())
 
     if use_wandb:
         wandb.log({"test_accuracy": result['accuracy'], "test_f1": result['f1']})
         wandb.finish(quiet=True)
 
-    print("\n--- Final metrics ---")
     print("Accuracy: " + str(result['accuracy']))
-    print("Precision: " + str(result['precision']))
-    print("Recall: " + str(result['recall']))
     print("F1-score: " + str(result['f1']))
-    print("Best model saved to " + str(args.model_save_path))
+    print("Model saved to " + str(args.model_save_path))
 
 
 if __name__ == '__main__':
