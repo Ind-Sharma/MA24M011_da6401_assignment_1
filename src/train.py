@@ -25,26 +25,26 @@ def main():
     src = os.path.dirname(os.path.abspath(__file__))
     p.add_argument('-m','--model_save_path',type=str,default=os.path.join(src,'trained_model.npy'))
     args,_ = p.parse_known_args()
-    args.hidden_layers = args.hidden_size
+    args.hidden_layers = args.hidden_size # set hidden layers
 
-    use_wandb = bool(os.environ.get("WANDB_API_KEY"))
+    use_wandb = bool(os.environ.get("WANDB_API_KEY")) # only use wandb if key exists
     if use_wandb:
         import wandb
         wandb.init(project=args.wandb_project,config=vars(args),
                    settings=wandb.Settings(start_method="thread"))
 
     from utils.data_loader import load_dataset
-    x_tr,y_tr,x_te,y_te = load_dataset(args.dataset)
+    x_tr,y_tr,x_te,y_te = load_dataset(args.dataset) # load data
     model = NeuralNetwork(args)
 
-    for ep in range(args.epochs):
+    for ep in range(args.epochs): # train loop
         loss = model.train(x_tr,y_tr,epochs=1,batch_size=args.batch_size)
         res = model.evaluate(x_te,y_te)
         print("epoch "+str(ep+1)+"/"+str(args.epochs)+" loss="+str(round(loss,4))+" acc="+str(round(res['accuracy'],4))+" f1="+str(round(res['f1'],4)))
         if use_wandb:
             wandb.log({"epoch":ep+1,"loss":loss,"accuracy":res['accuracy'],"f1":res['f1']})
 
-    np.save(args.model_save_path,model.get_weights())
+    np.save(args.model_save_path,model.get_weights()) # save model
     if use_wandb:
         wandb.log({"test_accuracy":res['accuracy'],"test_f1":res['f1']})
         wandb.finish(quiet=True)

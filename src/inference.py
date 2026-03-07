@@ -37,28 +37,28 @@ def main():
     loaded = False
     for mp in [os.path.join(os.getcwd(),'best_model.npy'),os.path.join(src,'best_model.npy')]:
         if os.path.exists(mp):
-            weights = np.load(mp,allow_pickle=True).item()
+            weights = np.load(mp,allow_pickle=True).item() # load saved weights
             loaded = True
             break
     if not loaded:
         weights = np.load(args.model_path,allow_pickle=True).item()
 
     wk = sorted([k for k in weights if k.startswith('W') and k[1:].isdigit()],key=lambda k:int(k[1:]))
-    hidden = [np.array(weights[k]).shape[0] for k in wk[:-1]]
+    hidden = [np.array(weights[k]).shape[0] for k in wk[:-1]] # get hidden sizes from weights
     args.hidden_size = hidden
     args.hidden_layers = hidden
 
     model = NeuralNetwork(args)
-    model.set_weights(weights)
+    model.set_weights(weights) # load weights into model
 
-    _,_,x_te,y_te = load_dataset(args.dataset)
+    _,_,x_te,y_te = load_dataset(args.dataset) # only need test data
     yhat = model.forward(np.array(x_te,dtype=float))
-    preds = np.argmax(yhat,axis=1)
+    preds = np.argmax(yhat,axis=1) # predicted class
     y_te = np.array(y_te,dtype=int).flatten()
 
-    nc = yhat.shape[1]
+    nc = yhat.shape[1] # number of classes
     yoh = np.zeros((len(y_te),nc))
-    yoh[np.arange(len(y_te)),y_te] = 1
+    yoh[np.arange(len(y_te)),y_te] = 1 # one hot for loss
     loss = float(model.loss_fn.forward_pass(yhat.T,yoh.T))
 
     res = {
