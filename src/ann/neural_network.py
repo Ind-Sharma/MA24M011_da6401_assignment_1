@@ -23,7 +23,7 @@ class NeuralNetwork:
             prev = size
         layers.append(NNLayer(10,prev,init=weight_init))
         self.layers = layers
-        self.param_layers = [l for l in layers if hasattr(l,'grad_W')]
+        self.param_layers = [l for l in layers if hasattr(l,'W')]
 
         self.loss_fn = LossLayer(getattr(args,'loss','cross_entropy'))
 
@@ -48,9 +48,8 @@ class NeuralNetwork:
         grad_b_list = []
 
         if y.ndim == 1 or (y.ndim == 2 and min(y.shape) == 1):
-            n_classes = y_hat.shape[1] if y_hat.ndim == 2 else 10
             y_flat = y.astype(int).flatten()
-            y_oh = np.zeros((len(y_flat),n_classes))
+            y_oh = np.zeros((len(y_flat),10))
             y_oh[np.arange(len(y_flat)),y_flat] = 1.0
             y = y_oh
 

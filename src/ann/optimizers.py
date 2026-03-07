@@ -8,10 +8,8 @@ class SGD:
 
     def update(self,layers):
         for layer in layers:
-            grad_W = layer.grad_W + self.wd*layer.W
-            grad_b = layer.grad_b
-            layer.W = layer.W - self.lr*grad_W
-            layer.b = layer.b - self.lr*grad_b
+            layer.W -= self.lr * (layer.grad_W + self.wd*layer.W)
+            layer.b -= self.lr * layer.grad_b
 
 
 class Momentum:
@@ -19,21 +17,18 @@ class Momentum:
         self.eta = lr
         self.gamma = momentum
         self.wd = weight_decay
-        self.v_W = []
-        self.v_b = []
+        self.v_W = None
+        self.v_b = None
 
     def update(self,layers):
-        if len(self.v_W) == 0:
-            for layer in layers:
-                self.v_W.append(np.zeros_like(layer.W))
-                self.v_b.append(np.zeros_like(layer.b))
+        if self.v_W is None:
+            self.v_W = [np.zeros_like(l.W) for l in layers]
+            self.v_b = [np.zeros_like(l.b) for l in layers]
         for i,layer in enumerate(layers):
-            nabla_W = layer.grad_W + self.wd*layer.W
-            nabla_b = layer.grad_b
-            self.v_W[i] = self.gamma*self.v_W[i] + self.eta*nabla_W
-            self.v_b[i] = self.gamma*self.v_b[i] + self.eta*nabla_b
-            layer.W = layer.W - self.v_W[i]
-            layer.b = layer.b - self.v_b[i]
+            self.v_W[i] = self.gamma*self.v_W[i] + self.eta*(layer.grad_W + self.wd*layer.W)
+            self.v_b[i] = self.gamma*self.v_b[i] + self.eta*layer.grad_b
+            layer.W -= self.v_W[i]
+            layer.b -= self.v_b[i]
 
 
 class RMSprop:
@@ -42,18 +37,16 @@ class RMSprop:
         self.beta = beta
         self.epsilon = eps
         self.wd = weight_decay
-        self.v_W = []
-        self.v_b = []
+        self.v_W = None
+        self.v_b = None
 
     def update(self,layers):
-        if len(self.v_W) == 0:
-            for layer in layers:
-                self.v_W.append(np.zeros_like(layer.W))
-                self.v_b.append(np.zeros_like(layer.b))
+        if self.v_W is None:
+            self.v_W = [np.zeros_like(l.W) for l in layers]
+            self.v_b = [np.zeros_like(l.b) for l in layers]
         for i,layer in enumerate(layers):
             g_W = layer.grad_W + self.wd*layer.W
-            g_b = layer.grad_b
             self.v_W[i] = self.beta*self.v_W[i] + (1-self.beta)*(g_W*g_W)
-            self.v_b[i] = self.beta*self.v_b[i] + (1-self.beta)*(g_b*g_b)
-            layer.W = layer.W - (self.eta/np.sqrt(self.v_W[i]+self.epsilon))*g_W
-            layer.b = layer.b - (self.eta/np.sqrt(self.v_b[i]+self.epsilon))*g_b
+            self.v_b[i] = self.beta*self.v_b[i] + (1-self.beta)*(layer.grad_b*layer.grad_b)
+            layer.W -= (self.eta/np.sqrt(self.v_W[i]+self.epsilon))*g_W
+            layer.b -= (self.eta/np.sqrt(self.v_b[i]+self.epsilon))*layer.grad_b

@@ -30,8 +30,6 @@ def _load_from_keras_cache(dataset_name):
 
 
 def load_dataset(dataset_name):
-    import tensorflow as tf
-
     # 1. Read directly from keras on-disk cache (fastest - no TF import overhead)
     try:
         result = _load_from_keras_cache(dataset_name)
@@ -44,6 +42,7 @@ def load_dataset(dataset_name):
         pass
 
     # 2. sklearn liac-arff (no pandas needed)
+    import tensorflow as tf
     if dataset_name == 'mnist':
         try:
             from sklearn.datasets import fetch_openml
