@@ -66,11 +66,6 @@ def evaluate_model(model, X_test, y_test):
     return {"logits": y_hat, "loss": loss, "accuracy": acc, "f1": f1, "precision": prec, "recall": rec}
 
 
-def load_data(dataset_name):
-    from utils.data_loader import load_dataset
-    return load_dataset(dataset_name)
-
-
 def main():
     args = parse_arguments()
     weights = load_model(args.model_path)
@@ -84,7 +79,8 @@ def main():
     model = NeuralNetwork(args)
     model.set_weights(weights)
 
-    _, _, X_test, y_test = load_data(args.dataset)
+    from utils.data_loader import load_dataset
+    _, _, X_test, y_test = load_dataset(args.dataset)
     result = evaluate_model(model, X_test, y_test)
 
     print("Accuracy:",  result["accuracy"])

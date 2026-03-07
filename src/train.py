@@ -10,11 +10,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ann.neural_network import NeuralNetwork
 
 
-def load_data(dataset_name):
-    from utils.data_loader import load_dataset
-    return load_dataset(dataset_name)
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dataset', choices=['mnist', 'fashion_mnist'], default='mnist')
@@ -44,7 +39,8 @@ def main():
         wandb.init(project=args.wandb_project, config=vars(args),
                    settings=wandb.Settings(start_method="thread"))
 
-    X_train, y_train, X_test, y_test = load_data(args.dataset)
+    from utils.data_loader import load_dataset
+    X_train, y_train, X_test, y_test = load_dataset(args.dataset)
     model = NeuralNetwork(args)
 
     best_f1 = 0.0

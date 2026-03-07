@@ -33,8 +33,7 @@ def _get_optimizer(args):
         return Momentum(lr,wd)
     elif opt == 'rmsprop':
         return RMSprop(lr,wd)
-    else:
-        return SGD(lr,wd)
+    return SGD(lr,wd)
 
 
 class NeuralNetwork:
@@ -108,13 +107,7 @@ class NeuralNetwork:
     def evaluate(self,X,y):
         from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score as f1_fn
 
-        X = np.array(X,dtype=float)
-        if X.ndim == 3:
-            X = X.reshape(X.shape[0],-1)
-        if X.max() > 2.0:
-            X = X / 255.0
-
-        y_hat = self.forward(X)
+        y_hat = self.forward(np.array(X,dtype=float))
         preds = np.argmax(y_hat,axis=1)
         y = np.array(y,dtype=int).flatten()
 
@@ -127,9 +120,9 @@ class NeuralNetwork:
 
     def get_weights(self):
         d = {}
-        for i in range(len(self.param_layers)):
-            d["W"+str(i)] = self.param_layers[i].W.copy()
-            d["b"+str(i)] = self.param_layers[i].b.copy()
+        for i,layer in enumerate(self.param_layers):
+            d["W"+str(i)] = layer.W.copy()
+            d["b"+str(i)] = layer.b.copy()
         d['_activation'] = self._activation
         return d
 
