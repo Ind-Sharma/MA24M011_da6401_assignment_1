@@ -6,9 +6,18 @@ from .neural_layer import NNLayer,ActivationLayer
 class NeuralNetwork:
     def __init__(self,args):
         if not hasattr(args,'hidden_layers'):
-            args.hidden_layers = getattr(args,'hidden_size',[128]) # fallback
-        self._activation = getattr(args,'activation','relu')
-        wi = getattr(args,'weight_init','xavier')
+            if hasattr(args,'hidden_size'):
+                args.hidden_layers = args.hidden_size
+            else:
+                args.hidden_layers = [128] # fallback
+        if hasattr(args,'activation'):
+            self._activation = args.activation
+        else:
+            self._activation = 'relu'
+        if hasattr(args,'weight_init'):
+            wi = args.weight_init
+        else:
+            wi = 'xavier'
         h = args.hidden_layers
         if isinstance(h,int):
             h = [h] # make it a list
@@ -21,10 +30,22 @@ class NeuralNetwork:
         layers.append(NNLayer(10 ,prev,init=wi)) # output layer 10 classes
         self.layers = layers
         self.param_layers = [l for l in layers if hasattr(l,'W')] # only weight layers
-        self.loss_fn = LossLayer(getattr(args,'loss','cross_entropy'))
-        lr = getattr(args,'learning_rate',0.01)
-        wd = getattr(args,'weight_decay',0.0)
-        opt = getattr(args,'optimizer','sgd')
+        if hasattr(args,'loss'):
+            self.loss_fn = LossLayer(args.loss)
+        else:
+            self.loss_fn = LossLayer('cross_entropy')
+        if hasattr(args,'learning_rate'):
+            lr = args.learning_rate
+        else:
+            lr = 0.01
+        if hasattr(args,'weight_decay'):
+            wd = args.weight_decay
+        else:
+            wd = 0.0
+        if hasattr(args,'optimizer'):
+            opt = args.optimizer
+        else:
+            opt = 'sgd'
         if opt=='momentum':
             self.optimizer = Momentum(lr,wd)
         elif opt=='rmsprop':
