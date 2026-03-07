@@ -6,9 +6,9 @@ from .neural_layer import NNLayer,ActivationLayer
 class NeuralNetwork:
     def __init__(self,args):
         if not hasattr(args,'hidden_layers'):
-            args.hidden_layers = getattr(args,'hidden_size',[128]) # fallback
-        self._activation = getattr(args,'activation','relu')
-        wi = getattr(args,'weight_init','xavier')
+            args.hidden_layers = args.hidden_size
+        self._activation = args.activation
+        wi = args.weight_init
         h = args.hidden_layers
         if isinstance(h,int):
             h = [h] # make it a list
@@ -21,10 +21,10 @@ class NeuralNetwork:
         layers.append(NNLayer(10 ,prev,init=wi)) # output layer 10 classes
         self.layers = layers
         self.param_layers = [l for l in layers if hasattr(l,'W')] # only weight layers
-        self.loss_fn = LossLayer(getattr(args,'loss','cross_entropy'))
-        lr  = getattr(args,'learning_rate',0.01)
-        wd  = getattr(args,'weight_decay',0.0)
-        opt = getattr(args,'optimizer','sgd')
+        self.loss_fn = LossLayer(args.loss)
+        lr  = args.learning_rate
+        wd  = args.weight_decay
+        opt = args.optimizer
         if opt=='momentum':
             self.optimizer = Momentum(lr,wd)
         elif opt=='rmsprop':
