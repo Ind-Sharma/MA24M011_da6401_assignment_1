@@ -53,8 +53,14 @@ class NeuralNetwork:
         self.loss_fn.forward_pass(y_hat.T, y.T)
         grad_from_next = self.loss_fn.backward_pass()
 
+        grad_W = []
+        grad_b = []
         for layer in reversed(self.layers):
             grad_from_next = layer.backward_pass(grad_from_next)
+            if hasattr(layer, 'grad_W'):
+                grad_W.append(layer.grad_W.T)
+                grad_b.append(layer.grad_b)
+        return grad_W, grad_b
 
     def train(self,X_train,y_train,epochs=1,batch_size=32):
         m = len(y_train)
