@@ -9,10 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ann.neural_network import NeuralNetwork
 
 
-def main():
-    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-    from utils.data_loader import load_dataset
-
+def parse_arguments():
     _src = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_path', type=str, default=os.path.join(_src, 'pretrained_model.npy'))
@@ -29,6 +26,15 @@ def main():
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.0)
     parser.add_argument('-w_p', '--wandb_project', type=str, default='da6401_assignment1')
     args, _ = parser.parse_known_args()
+    return args
+
+
+def main():
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+    from utils.data_loader import load_dataset
+
+    _src = os.path.dirname(os.path.abspath(__file__))
+    args = parse_arguments()
 
     # Load model: pretrained_model.npy first (never overwritten by train.py)
     pretrained = os.path.join(_src, 'pretrained_model.npy')
