@@ -182,93 +182,57 @@ class NeuralNetwork:
         for i, layer in enumerate(self.param_layers):
             d[f"W{i}"] = layer.W.copy()
             d[f"b{i}"] = layer.b.copy()
-        # Store activation so set_weights can restore the correct activation
         d['_activation'] = self._activation
         return d
 
-    def _assign_W(self, layer, W):
-        """Set layer.W, transposing if needed so shape is (n_out, n_in)."""
-        W = np.array(W, dtype=float)
-        if W.shape != layer.W.shape and W.T.shape == layer.W.shape:
-            W = W.T
-        layer.W = W
-
-    def _assign_b(self, layer, b):
-        """Set layer.b, always as (n_out, 1)."""
-        b = np.array(b, dtype=float).flatten().reshape(-1, 1)
-        layer.b = b
-
     def set_weights(self, weights):
-        if isinstance(weights, list):
-            if len(weights) > 0 and isinstance(weights[0], tuple):
-                # list of (W, b) tuples — match by position
-                w_list = [(W, b) for W, b in weights]
-            else:
-                # flat list [W0, b0, W1, b1, ...]
-                w_list = [(weights[2*i], weights[2*i+1])
-                          for i in range(len(weights)//2)]
-            for i, (W, b) in enumerate(w_list):
-                if i < len(self.param_layers):
-                    self._assign_W(self.param_layers[i], W)
-                    self._assign_b(self.param_layers[i], b)
-        else:
-            # First pass: extract _activation before anything else
-            if '_activation' in weights:
-                self._activation = weights['_activation']
-
-            # Second pass: extract W/b arrays
-            W_arrays = {}
-            b_arrays = {}
-            for k, v in weights.items():
-                if k == '_activation':
-                    continue
-                if k.startswith('W'):
-                    try:
-                        W_arrays[int(k[1:])] = v
-                    except ValueError:
-                        pass
-                elif k.startswith('b'):
-                    try:
-                        b_arrays[int(k[1:])] = v
-                    except ValueError:
-                        pass
-
-            W_sorted = [W_arrays[k] for k in sorted(W_arrays)]
-            b_sorted = [b_arrays[k] for k in sorted(b_arrays)]
-
-            # Update all ActivationLayers to use the restored activation
+        # Restore activation first (it may be last key in dict, so check explicitly)
+        if isinstance(weights, dict) and '_activation' in weights:
+            self._activation = weights['_activation']
             for layer in self.layers:
                 if hasattr(layer, 'activation'):
                     layer.activation = self._activation
 
-            n_layers = len(self.param_layers)
-            n_weights = len(W_sorted)
+        # Extract W/b arrays
+        if isinstance(weights, dict):
+            W_arrays, b_arrays = {}, {}
+            for k, v in weights.items():
+                if k.startswith('W'):
+                    try:
+                        W_arrays[int(k[1:])] = np.array(v, dtype=float)
+                    except ValueError:
+                        pass
+                elif k.startswith('b'):
+                    try:
+                        b_arrays[int(k[1:])] = np.array(v, dtype=float)
+                    except ValueError:
+                        pass
+            W_sorted = [W_arrays[k] for k in sorted(W_arrays)]
+            b_sorted = [b_arrays[k] for k in sorted(b_arrays)]
+        elif isinstance(weights, list) and len(weights) > 0 and isinstance(weights[0], tuple):
+            W_sorted = [np.array(W, dtype=float) for W, b in weights]
+            b_sorted = [np.array(b, dtype=float) for W, b in weights]
+        else:
+            W_sorted = [np.array(weights[2*i], dtype=float) for i in range(len(weights)//2)]
+            b_sorted = [np.array(weights[2*i+1], dtype=float) for i in range(len(weights)//2)]
 
-            if n_weights != n_layers:
-                # Architecture mismatch: rebuild layers to match incoming weights
-                activation = self._activation  # already restored above
-                new_layers = []
-                for i, (W, b) in enumerate(zip(W_sorted, b_sorted)):
-                    W = np.array(W, dtype=float)
-                    b = np.array(b, dtype=float)
-                    n_out, n_in = W.shape if W.shape[0] < W.shape[1] or i == len(W_sorted)-1 else W.T.shape
-                    # Determine correct orientation
-                    if W.shape[0] <= W.shape[1]:
-                        n_out, n_in = W.shape
-                    else:
-                        n_out, n_in = W.shape
-                    layer = NNLayer(n_out, n_in)
-                    layer.W = W.copy() if W.shape == (n_out, n_in) else W.T.copy()
-                    layer.b = b.flatten().reshape(-1, 1)
-                    new_layers.append(layer)
-                    if i < n_weights - 1:
-                        new_layers.append(ActivationLayer(activation))
-                self.layers = new_layers
-                self.param_layers = [l for l in self.layers if hasattr(l, 'grad_W') and hasattr(l, 'W')]
-                return
-
-            # Same number of layers — assign positionally
+        # If architecture matches, assign directly
+        if len(W_sorted) == len(self.param_layers):
             for i, layer in enumerate(self.param_layers):
-                self._assign_W(layer, W_sorted[i])
-                if i < len(b_sorted):
-                    self._assign_b(layer, b_sorted[i])
+                W = W_sorted[i]
+                if W.shape != layer.W.shape and W.T.shape == layer.W.shape:
+                    W = W.T
+                layer.W = W
+                layer.b = b_sorted[i].flatten().reshape(-1, 1)
+        else:
+            # Architecture mismatch: rebuild layers to match incoming weights
+            new_layers = []
+            for i, (W, b) in enumerate(zip(W_sorted, b_sorted)):
+                layer = NNLayer(W.shape[0], W.shape[1])
+                layer.W = W.copy()
+                layer.b = b.flatten().reshape(-1, 1)
+                new_layers.append(layer)
+                if i < len(W_sorted) - 1:
+                    new_layers.append(ActivationLayer(self._activation))
+            self.layers = new_layers
+            self.param_layers = [l for l in self.layers if hasattr(l, 'W')]
